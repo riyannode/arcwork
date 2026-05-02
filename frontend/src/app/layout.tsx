@@ -1,6 +1,5 @@
 'use client';
 
-import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { WagmiProvider } from 'wagmi';
@@ -10,7 +9,11 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WebGLBackground from '@/components/WebGLBackground';
 
-const inter = Inter({ subsets: ['latin'], weight: ['200','300','400','500','600','700'] });
+const inter = Inter({ 
+  subsets: ['latin'], 
+  weight: ['200','300','400','500','600','700'],
+  variable: '--font-inter',
+});
 const queryClient = new QueryClient();
 
 export default function RootLayout({
@@ -19,13 +22,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <head>
         <link rel="icon" href="/logo.jpg" type="image/jpeg" />
         <meta name="theme-color" content="#000000" />
-        <meta name="description" content="ArcWork — Achievement, Invoice & Subscription dApp on Arc Network" />
+        <meta name="description" content="ArcWork — Achievement, Invoice & Subscription dApp on Arc Network. Build workflows on programmable money." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>ArcWork — Build on Programmable Money</title>
       </head>
-      <body className={inter.className} style={{ background: '#000000', color: '#FFFFFF' }}>
+      <body className={inter.className} style={{ background: '#000', color: '#FFF' }}>
         <WebGLBackground />
         <WagmiProvider config={config}>
           <QueryClientProvider client={queryClient}>
