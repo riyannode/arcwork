@@ -1,6 +1,5 @@
 import { http, createConfig } from 'wagmi';
-import { mainnet } from 'wagmi/chains';
-import { injected } from 'wagmi/connectors';
+import { injected, metaMask, walletConnect } from 'wagmi/connectors';
 
 export const arcTestnet = {
   id: 5042002,
@@ -18,7 +17,18 @@ export const arcTestnet = {
 
 export const config = createConfig({
   chains: [arcTestnet],
-  connectors: [injected()],
+  connectors: [
+    metaMask({
+      dappMetadata: {
+        name: 'ArcWork',
+        url: 'https://arcwork-zeta.vercel.app',
+      },
+    }),
+    injected(),
+    walletConnect({
+      projectId: 'arcwork-testnet-demo', // Replace with real WalletConnect projectId
+    }),
+  ],
   transports: {
     [arcTestnet.id]: http('https://rpc.testnet.arc.network'),
   },
