@@ -180,7 +180,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="section-reveal text-center mb-16">
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 300, letterSpacing: '-0.03em' }}>
-              Powerful primitives for a{' '}
+              Powerful tools for a{' '}
               <span style={{ color: '#00F0FF' }}>smarter workflow</span>
             </h2>
             <p className="mt-4 text-sm font-extralight max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.4)' }}>
