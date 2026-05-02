@@ -2,8 +2,5 @@
   "buildCommand": "next build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "npm install --legacy-peer-deps",
-  "engines": {
-    "node": "18.x"
-  }
+  "installCommand": "npm install --legacy-peer-deps"
 }
