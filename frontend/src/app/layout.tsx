@@ -20,6 +20,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/logo.jpg" type="image/jpeg" />
+        <meta name="theme-color" content="#000000" />
+        <meta name="description" content="ArcWork — Achievement, Invoice & Subscription dApp on Arc Network" />
+      </head>
       <body className={inter.className} style={{ background: '#000000', color: '#FFFFFF' }}>
         <WebGLBackground />
         <WagmiProvider config={config}>

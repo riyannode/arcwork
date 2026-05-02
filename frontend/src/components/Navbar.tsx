@@ -22,11 +22,8 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 glass-panel" style={{ borderRadius: 0, borderBottom: '1.25px solid rgba(255,255,255,0.12)' }}>
       <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-               style={{ background: '#00F0FF', color: '#000' }}>
-            A
-          </div>
+        <Link href="/" className="flex items-center gap-2 group">
+          <img src="/logo.jpg" alt="ArcWork" className="w-8 h-8 rounded-full object-cover" style={{ border: '1.5px solid rgba(0,240,255,0.3)' }} />
           <span className="text-lg font-light tracking-tight"
                 style={{ color: '#00F0FF' }}>
             ArcWork
