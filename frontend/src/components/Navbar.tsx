@@ -3,62 +3,78 @@
 import Link from 'next/link';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { shortenAddress } from '@/lib/contracts';
+import { useState } from 'react';
 
 export default function Navbar() {
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const navLinks = [
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/achievements', label: 'Achievements' },
+    { href: '/invoice', label: 'Invoices' },
+    { href: '/subscription', label: 'Subscriptions' },
+  ];
 
   return (
-    <nav className="sticky top-0 z-50 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center font-bold text-sm">
-                A
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                ArcWork
-              </span>
+    <nav className="sticky top-0 z-50 glass-panel" style={{ borderRadius: 0, borderBottom: '1.25px solid rgba(255,255,255,0.12)' }}>
+      <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
+               style={{ background: '#00F0FF', color: '#000' }}>
+            A
+          </div>
+          <span className="text-lg font-light tracking-tight"
+                style={{ color: '#00F0FF' }}>
+            ArcWork
+          </span>
+        </Link>
+
+        {/* Desktop Links */}
+        <div className="hidden md:flex items-center gap-8">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm font-light transition-colors duration-300"
+              style={{ color: 'rgba(255,255,255,0.6)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#00F0FF')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+            >
+              {link.label}
             </Link>
-            <div className="hidden md:flex items-center gap-6">
-              <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors text-sm">
-                Dashboard
-              </Link>
-              <Link href="/achievements" className="text-gray-400 hover:text-white transition-colors text-sm">
-                Achievements
-              </Link>
-              <Link href="/invoice" className="text-gray-400 hover:text-white transition-colors text-sm">
-                Invoices
-              </Link>
-              <Link href="/subscription" className="text-gray-400 hover:text-white transition-colors text-sm">
-                Subscriptions
-              </Link>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {isConnected ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-400 font-mono">
-                  {shortenAddress(address!)}
-                </span>
-                <button onClick={() => disconnect()} className="btn-secondary text-sm">
-                  Disconnect
-                </button>
-              </div>
-            ) : (
+          ))}
+        </div>
+
+        {/* Wallet */}
+        <div className="flex items-center gap-4">
+          {isConnected ? (
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-light px-4 py-2 rounded-full"
+                    style={{ background: 'rgba(0,240,255,0.1)', color: '#00F0FF', border: '1px solid rgba(0,240,255,0.2)' }}>
+                {shortenAddress(address || '')}
+              </span>
               <button
-                onClick={() => {
-                  const injected = connectors.find((c) => c.id === 'injected');
-                  if (injected) connect({ connector: injected });
-                }}
-                className="btn-primary text-sm"
+                onClick={() => disconnect()}
+                className="text-xs font-light px-4 py-2 rounded-full transition-all duration-300"
+                style={{ color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,100,100,0.5)'; e.currentTarget.style.color = '#ff6464'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
               >
-                Connect Wallet
+                Disconnect
               </button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => connect({ connector: connectors[0] })}
+              className="btn-primary"
+            >
+              Connect Wallet
+            </button>
+          )}
         </div>
       </div>
     </nav>

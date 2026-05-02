@@ -1,133 +1,282 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef } from 'react';
+import Link from 'next/link';
 
 export default function Home() {
-  const [isHovered, setIsHovered] = useState(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+    document.querySelectorAll('.section-reveal').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  const features = [
+    {
+      title: 'Achievements',
+      desc: 'Soulbound NFT badges for on-chain milestones. Non-transferable, permanent proof of contribution.',
+      icon: '⬡',
+      href: '/achievements',
+      tag: 'Soulbound NFTs',
+    },
+    {
+      title: 'Invoices',
+      desc: 'Create, send, and settle USDC invoices with built-in escrow. 0.5% platform fee.',
+      icon: '◈',
+      href: '/invoice',
+      tag: 'USDC Escrow',
+    },
+    {
+      title: 'Subscriptions',
+      desc: 'Recurring USDC payments with automatic billing. Set it and forget it.',
+      icon: '◎',
+      href: '/subscription',
+      tag: 'Recurring Pay',
+    },
+  ];
+
+  const recommended = [
+    {
+      title: 'Deploy Contracts',
+      desc: 'Deploy your smart contracts on Arc Testnet with USDC gas.',
+      icon: '🚀',
+      tag: 'Developer',
+    },
+    {
+      title: 'Bridge USDC',
+      desc: 'Transfer USDC cross-chain via CCTP with sub-second finality.',
+      icon: '🔗',
+      tag: 'Cross-chain',
+    },
+    {
+      title: 'Earn Badges',
+      desc: 'Complete milestones and earn exclusive soulbound achievement badges.',
+      icon: '🏆',
+      tag: 'Gamified',
+    },
+    {
+      title: 'Manage Subscriptions',
+      desc: 'Create recurring payment plans for your services and products.',
+      icon: '💳',
+      tag: 'Billing',
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-purple-900/20 to-pink-900/20"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/30 via-transparent to-purple-900/30"></div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
-              <span className="block">Achieve More with</span>
-              <span className="block bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mt-2">
-                ArcWork
-              </span>
-            </h1>
-            <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-300">
-              The all-in-one platform for managing achievements, invoices, and subscriptions on the Arc Network.
+    <div className="relative">
+      {/* Hero Section — Two Column */}
+      <section className="relative min-h-screen flex items-center px-8">
+        {/* Background glow */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/4 left-1/3 w-96 h-96 rounded-full"
+               style={{ background: 'radial-gradient(circle, rgba(0,240,255,0.08) 0%, transparent 70%)' }} />
+          <div className="absolute top-1/2 right-1/4 w-80 h-80 rounded-full"
+               style={{ background: 'radial-gradient(circle, rgba(10,69,255,0.06) 0%, transparent 70%)' }} />
+        </div>
+
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
+          {/* Left — Text */}
+          <div className="section-reveal visible">
+            <p className="text-xs font-light mb-6 tracking-widest uppercase"
+               style={{ color: 'rgba(0,240,255,0.7)' }}>
+              Arc Network · Testnet
             </p>
-            
-            <div className="mt-10 flex justify-center gap-4">
-              <button 
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-                className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-1 shadow-lg shadow-indigo-500/20"
-              >
-                Get Started Free
-              </button>
-              <button className="px-8 py-3 bg-gray-800 border border-gray-700 rounded-lg font-medium hover:bg-gray-700 transition-colors duration-300">
-                View Demo
-              </button>
+            <h1 style={{
+              fontSize: 'clamp(40px, 6vw, 72px)',
+              fontWeight: 300,
+              lineHeight: '1.05',
+              letterSpacing: '-0.04em',
+            }}>
+              <span style={{ color: '#FFFFFF' }}>Build </span>
+              <span style={{ color: '#00F0FF' }}>workflows</span>
+              <br />
+              <span style={{ color: 'rgba(255,255,255,0.5)' }}>on programmable money.</span>
+            </h1>
+            <p className="mt-6 max-w-lg text-base font-extralight leading-relaxed"
+               style={{ color: 'rgba(255,255,255,0.45)', lineHeight: '26px' }}>
+              The all-in-one platform for achievements, invoices, and subscriptions
+              on Arc Network — powered by USDC with sub-second finality.
+            </p>
+            <div className="mt-8 flex items-center gap-4">
+              <Link href="/dashboard" className="btn-primary inline-block px-8 py-3">
+                Get Started
+              </Link>
+              <Link href="/achievements"
+                    className="text-sm font-light px-8 py-3 rounded-full transition-all duration-300"
+                    style={{ color: '#00F0FF', border: '1px solid rgba(0,240,255,0.3)' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,240,255,0.1)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}>
+                Learn More
+              </Link>
+            </div>
+            <div className="mt-10 flex items-center gap-4">
+              <div className="flex -space-x-2">
+                {[0,1,2,3,4].map(i => (
+                  <div key={i} className="w-8 h-8 rounded-full border-2"
+                       style={{ background: `rgba(0,240,255,${0.15 + i*0.05})`, borderColor: '#000' }} />
+                ))}
+              </div>
+              <p className="text-xs font-light" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                Trusted by 1,000+ developers on Arc Testnet
+              </p>
+            </div>
+          </div>
+
+          {/* Right — Visual */}
+          <div className="section-reveal hidden lg:block" style={{ transitionDelay: '0.2s' }}>
+            <div className="relative">
+              {/* Glass card preview */}
+              <div className="glass-card p-8 relative overflow-hidden">
+                <div className="absolute inset-0 pointer-events-none"
+                     style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.05) 0%, transparent 50%)' }} />
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm"
+                       style={{ background: 'rgba(0,240,255,0.15)', color: '#00F0FF' }}>
+                    ⬡
+                  </div>
+                  <div>
+                    <div className="text-sm font-light">ArcWork Dashboard</div>
+                    <div className="text-xs font-light" style={{ color: 'rgba(255,255,255,0.3)' }}>Arc Testnet · Chain 5042002</div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-full"
+                       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <span className="text-xs font-light" style={{ color: 'rgba(255,255,255,0.5)' }}>Achievements</span>
+                    <span className="text-xs font-light" style={{ color: '#00F0FF' }}>5 badges</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-full"
+                       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <span className="text-xs font-light" style={{ color: 'rgba(255,255,255,0.5)' }}>Invoices</span>
+                    <span className="text-xs font-light" style={{ color: '#00F0FF' }}>12 active</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-full"
+                       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <span className="text-xs font-light" style={{ color: 'rgba(255,255,255,0.5)' }}>Subscriptions</span>
+                    <span className="text-xs font-light" style={{ color: '#00F0FF' }}>3 plans</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-full"
+                       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <span className="text-xs font-light" style={{ color: 'rgba(255,255,255,0.5)' }}>USDC Balance</span>
+                    <span className="text-xs font-light" style={{ color: '#00F0FF' }}>1,250.00</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold">Powerful Features</h2>
-            <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-400">
-              Everything you need to manage your work and finances in one place
+      {/* Features — 3 Column Grid */}
+      <section className="relative py-24 px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="section-reveal text-center mb-16">
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 300, letterSpacing: '-0.03em' }}>
+              Powerful primitives for a{' '}
+              <span style={{ color: '#00F0FF' }}>smarter workflow</span>
+            </h2>
+            <p className="mt-4 text-sm font-extralight max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              Everything you need to build, manage, and scale on Arc Network.
             </p>
           </div>
-
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-indigo-500 transition-all duration-300 group">
-              <div className="w-14 h-14 rounded-lg bg-indigo-900/50 flex items-center justify-center group-hover:bg-indigo-700 transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <h3 className="mt-4 text-xl font-semibold">Achievement Tracking</h3>
-              <p className="mt-2 text-gray-400">
-                Record and celebrate milestones with our intuitive achievement system powered by blockchain technology.
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-purple-500 transition-all duration-300 group">
-              <div className="w-14 h-14 rounded-lg bg-purple-900/50 flex items-center justify-center group-hover:bg-purple-700 transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="mt-4 text-xl font-semibold">Smart Invoicing</h3>
-              <p className="mt-2 text-gray-400">
-                Generate professional invoices instantly and track payments with real-time blockchain verification.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-pink-500 transition-all duration-300 group">
-              <div className="w-14 h-14 rounded-lg bg-pink-900/50 flex items-center justify-center group-hover:bg-pink-700 transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-                </svg>
-              </div>
-              <h3 className="mt-4 text-xl font-semibold">Subscription Management</h3>
-              <p className="mt-2 text-gray-400">
-                Automate recurring payments and manage subscription tiers with secure smart contracts.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {features.map((f, i) => (
+              <Link key={i} href={f.href} className="section-reveal" style={{ transitionDelay: `${i * 0.1}s` }}>
+                <div className="feature-card h-full">
+                  <div className="text-2xl mb-4" style={{ color: '#00F0FF' }}>{f.icon}</div>
+                  <h3 className="text-base font-light mb-2">{f.title}</h3>
+                  <p className="text-sm font-extralight mb-4" style={{ color: 'rgba(255,255,255,0.45)', lineHeight: '22px' }}>
+                    {f.desc}
+                  </p>
+                  <span className="text-xs font-light px-3 py-1 rounded-full"
+                        style={{ background: 'rgba(0,240,255,0.08)', color: 'rgba(0,240,255,0.7)' }}>
+                    {f.tag}
+                  </span>
+                </div>
+              </Link>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* Recommended for You */}
+      <section className="relative py-24 px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="section-reveal mb-12">
+            <h2 style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 300, letterSpacing: '-0.02em' }}>
+              Recommended for You
+            </h2>
+            <p className="mt-3 text-sm font-extralight" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              Get started with these popular actions on Arc Testnet.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {recommended.map((r, i) => (
+              <div key={i} className="section-reveal feature-card" style={{ transitionDelay: `${i * 0.08}s` }}>
+                <div className="text-2xl mb-3">{r.icon}</div>
+                <h4 className="text-sm font-light mb-1">{r.title}</h4>
+                <p className="text-xs font-extralight mb-3" style={{ color: 'rgba(255,255,255,0.4)', lineHeight: '18px' }}>
+                  {r.desc}
+                </p>
+                <span className="text-[10px] font-light px-2 py-0.5 rounded-full"
+                      style={{ background: 'rgba(0,240,255,0.06)', color: 'rgba(0,240,255,0.6)' }}>
+                  {r.tag}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Bar */}
+      <section className="relative py-20 px-8" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+          {[
+            { label: 'Chain', value: 'Arc Testnet' },
+            { label: 'Gas Token', value: 'USDC' },
+            { label: 'Finality', value: '<1 second' },
+            { label: 'Fee', value: '0.5%' },
+          ].map((s, i) => (
+            <div key={i} className="section-reveal text-center" style={{ transitionDelay: `${i * 0.1}s` }}>
+              <div className="text-xl font-light mb-1" style={{ color: '#00F0FF' }}>{s.value}</div>
+              <div className="text-[10px] font-light uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.35)' }}>{s.label}</div>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-indigo-900/30 to-purple-900/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold">Ready to Transform Your Workflow?</h2>
-          <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-300">
-            Join thousands of professionals already using ArcWork to streamline their processes.
+      <section className="relative py-32 px-8 text-center">
+        <div className="max-w-2xl mx-auto section-reveal">
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 300, letterSpacing: '-0.03em' }}>
+            Ready to build on{' '}
+            <span style={{ color: '#00F0FF' }}>Arc</span>?
+          </h2>
+          <p className="mt-4 text-sm font-extralight" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            Deploy your first contract, create an invoice, or start earning badges today.
           </p>
-          
-          <div className="mt-10">
-            <button className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg font-bold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-1 shadow-lg shadow-indigo-500/20">
-              Start Your Free Trial
-            </button>
-            <p className="mt-4 text-gray-400">
-              No credit card required • Cancel anytime
-            </p>
+          <div className="mt-8 flex items-center justify-center gap-4">
+            <Link href="/dashboard" className="btn-primary px-8 py-3">
+              Open Dashboard
+            </Link>
+            <a href="https://faucet.circle.com" target="_blank" rel="noopener noreferrer"
+               className="text-sm font-light px-8 py-3 rounded-full transition-all duration-300"
+               style={{ color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)' }}
+               onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,240,255,0.3)'; e.currentTarget.style.color = '#00F0FF'; }}
+               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}>
+              Get Testnet USDC
+            </a>
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-12 border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center">
-                <span className="font-bold">A</span>
-              </div>
-              <span className="ml-3 text-xl font-bold">ArcWork</span>
-            </div>
-            <p className="mt-4 md:mt-0 text-gray-500">
-              © {new Date().getFullYear()} ArcWork. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
