@@ -1,0 +1,16 @@
+{
+  "name": "arcwork-backend",
+  "version": "1.0.0",
+  "description": "ArcWork backend API server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "ethers": "^6.10.0"
+  }
+}
