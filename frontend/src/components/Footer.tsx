@@ -24,7 +24,7 @@ export default function Footer() {
           <div>
             <div className="flex items-center gap-2.5 mb-4">
               <img 
-                src="/logo.jpg" 
+                src="/logo.png" 
                 alt="ArcWork" 
                 className="w-7 h-7 rounded-lg object-cover" 
                 style={{ border: '1px solid rgba(0,240,255,0.2)' }} 

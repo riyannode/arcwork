@@ -24,7 +24,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <head>
-        <link rel="icon" href="/logo.jpg" type="image/jpeg" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/logo.png" />
         <meta name="theme-color" content="#000000" />
         <meta name="description" content="ArcWork — Achievement, Invoice & Subscription dApp on Arc Network. Build workflows on programmable money." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

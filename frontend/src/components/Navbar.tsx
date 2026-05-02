@@ -42,7 +42,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="relative">
             <img 
-              src="/logo.jpg" 
+              src="/logo.png" 
               alt="ArcWork" 
               className="w-8 h-8 rounded-lg object-cover transition-all duration-300 group-hover:scale-105" 
               style={{ border: '1.5px solid rgba(0,240,255,0.3)' }} 
