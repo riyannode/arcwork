@@ -1,8 +1,12 @@
 # Dependencies
 node_modules/
-lib/
+
+# Build artifacts
 cache/
 out/
+broadcast/
+dist/
+build/
 
 # Next.js
 .next/
@@ -11,16 +15,35 @@ out/
 # Environment
 .env
 .env.local
+.env.*.local
 
-# Build
-build/
-dist/
+# IDE
+.vscode/
+.idea/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# IDE
-.vscode/
-.idea/
-.vercel
+# Foundry
+contracts/cache/
+contracts/out/
+contracts/broadcast/
+contracts/lib/
+contracts/foundry.lock
+
+# Frontend build
+frontend/.next/
+frontend/node_modules/
+frontend/.vercel/
+frontend/.npmrc
+frontend/.nvmrc
+frontend/next-env.d.ts
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Misc
+*.tsbuildinfo

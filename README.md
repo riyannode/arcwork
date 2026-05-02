@@ -1,98 +1,106 @@
-# ArcWork 🏆💰🔄
+<div align="center">
 
-**Achievement + Invoice + Subscription Platform on Arc Network**
+# 🏆 ArcWork
 
-## 🚀 Features
+**Achievement · Invoice · Subscription — on Arc Network**
 
-### 🏆 Achievement System
-- Soulbound NFT badges (ERC-5192)
-- Earn badges for on-chain actions
-- Achievement showcase
-- Progress tracking
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org)
+[![Foundry](https://img.shields.io/badge/Foundry-v0.2-grey?logo=ethereum)](https://getfoundry.sh)
+[![Arc Network](https://img.shields.io/badge/Arc-Network-00F0FF)](https://arc.network)
 
-### 💰 Invoice System
-- Create USDC invoices
-- Accept payments from any chain
-- Auto-settlement on Arc
-- 0.5% platform fee
+[Live Demo](https://arcwork-zeta.vercel.app) · [Contracts](https://testnet.arcscan.app) · [Report Bug](https://github.com/riyannode/arcwork/issues)
 
-### 🔄 Subscription Billing
-- Recurring USDC payments
-- Monthly/Yearly intervals
-- Auto-charge via keeper
-- Cancel anytime
+---
 
-## 📁 Project Structure
+</div>
+
+## ✨ Features
+
+| Module | Description |
+|--------|-------------|
+| 🏆 **Achievement** | Soulbound NFT badges (ERC-5192) for on-chain actions |
+| 💰 **Invoice** | Create USDC invoices, accept payments cross-chain, auto-settlement |
+| 🔄 **Subscription** | Recurring USDC payments with auto-charge & cancel anytime |
+
+## 📁 Structure
 
 ```
 arcwork/
-├── contracts/
+├── contracts/          # Solidity smart contracts (Foundry)
 │   └── src/
-│       ├── Achievement.sol    # Soulbound badge NFT
-│       ├── Invoice.sol        # USDC invoice + escrow
-│       └── Subscription.sol   # Recurring payments
-├── frontend/
-│   └── src/
-│       ├── app/
-│       │   ├── page.tsx           # Landing page
-│       │   ├── dashboard/page.tsx # Dashboard
-│       │   ├── achievements/page.tsx
-│       │   ├── invoice/page.tsx
-│       │   └── subscription/page.tsx
-│       ├── components/
-│       │   ├── Navbar.tsx
-│       │   ├── Footer.tsx
-│       │   ├── AchievementCard.tsx
-│       │   ├── InvoiceCard.tsx
-│       │   └── SubscriptionCard.tsx
-│       └── lib/
-│           ├── contracts.ts   # Contract ABIs
-│           └── wagmi.ts       # Wallet config
-└── README.md
+│       ├── Achievement.sol      # Soulbound badge NFT
+│       ├── Invoice.sol          # USDC invoice + escrow
+│       └── Subscription.sol     # Recurring payments
+└── frontend/           # Next.js 14 + Tailwind + wagmi
+    └── src/
+        ├── app/        # Pages (/, dashboard, achievements, invoice, subscription)
+        ├── components/ # Navbar, Footer, WebGL Background
+        └── lib/        # Contract ABIs & wallet config
 ```
 
-## 🔧 Setup
+## 🚀 Quick Start
 
-### Smart Contracts (Foundry)
+### Smart Contracts
+
 ```bash
 cd contracts
 forge install OpenZeppelin/openzeppelin-contracts
 forge build
 forge test
-forge create src/Achievement.sol:Achievement --rpc-url https://rpc.testnet.arc.network --private-key $PRIVATE_KEY
 ```
 
-### Frontend (Next.js)
+### Frontend
+
 ```bash
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
+
+Open [http://localhost:3080](http://localhost:3080)
 
 ## 🌐 Arc Network
 
-- **Chain ID:** 5042002
-- **RPC:** https://rpc.testnet.arc.network
-- **Explorer:** https://testnet.arcscan.app
-- **Faucet:** https://faucet.circle.com
-- **USDC:** 0x3600000000000000000000000000000000000000
+| Key | Value |
+|-----|-------|
+| Chain ID | `5042002` |
+| RPC | `https://rpc.testnet.arc.network` |
+| Explorer | [testnet.arcscan.app](https://testnet.arcscan.app) |
+| Faucet | [faucet.circle.com](https://faucet.circle.com) |
+| USDC | `0x3600000000000000000000000000000000000000` |
 
-## 💡 Why Arc?
+**Why Arc?**
+- ⛽ USDC as gas (no ETH needed)
+- ⚡ Sub-second finality
+- 🔗 EVM compatible
+- 🔒 Opt-in privacy
+- 🌉 Cross-chain USDC via CCTP
 
-- ✅ USDC as gas (no ETH needed)
-- ✅ Sub-second finality
-- ✅ EVM compatible
-- ✅ Opt-in privacy
-- ✅ Cross-chain USDC (CCTP)
+## 📊 Deployed Contracts
 
-## 📊 Revenue Model
+| Contract | Address |
+|----------|---------|
+| Achievement | [`0x52138F4C77e53805CaaeD0D2e39292EC312C8440`](https://testnet.arcscan.app/address/0x52138F4C77e53805CaaeD0D2e39292EC312C8440) |
+| Invoice | [`0x1Eb2Ed241Cb978f4BF02DA68E128D50AD7A53Fbf`](https://testnet.arcscan.app/address/0x1Eb2Ed241Cb978f4BF02DA68E128D50AD7A53Fbf) |
+| Subscription | [`0x01028Ca35bE5c3dcE85F661C6528138bc3Ad9Fc1`](https://testnet.arcscan.app/address/0x01028Ca35bE5c3dcE85F661C6528138bc3Ad9Fc1) |
 
-- Achievement: Premium badges ($5-50)
-- Invoice: 0.5% per invoice
-- Subscription: 1-2% per payment
+## 💡 Revenue Model
+
+- **Achievement:** Premium badges ($5–50)
+- **Invoice:** 0.5% per invoice
+- **Subscription:** 1–2% per payment
 
 ## 🔗 Links
 
 - [Arc Network](https://arc.network)
 - [Arc Docs](https://docs.arc.network)
 - [Circle Faucet](https://faucet.circle.com)
+
+---
+
+<div align="center">
+
+**Built on [Arc Network](https://arc.network) by [Circle](https://circle.com)**
+
+</div>
