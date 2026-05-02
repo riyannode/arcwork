@@ -107,13 +107,6 @@ export default function Home() {
     },
   ];
 
-  const recommended = [
-    { title: 'Deploy Contracts', desc: 'Deploy your smart contracts on Arc Testnet with USDC gas.', icon: '🚀', tag: 'Developer' },
-    { title: 'Bridge USDC', desc: 'Transfer USDC cross-chain via CCTP with sub-second finality.', icon: '🔗', tag: 'Cross-chain' },
-    { title: 'Earn Badges', desc: 'Complete milestones and earn exclusive soulbound achievement badges.', icon: '🏆', tag: 'Gamified' },
-    { title: 'Manage Subscriptions', desc: 'Create recurring payment plans for your services and products.', icon: '💳', tag: 'Billing' },
-  ];
-
   const stats = [
     { label: 'Finality', value: '<1', suffix: 's', prefix: '' },
     { label: 'Platform Fee', value: 0.5, suffix: '%', prefix: '' },
@@ -336,29 +329,86 @@ export default function Home() {
       <section className="relative py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="section-reveal mb-12">
+            <span 
+              className="inline-block text-xs font-light tracking-widest uppercase px-4 py-1.5 rounded-full mb-6"
+              style={{ background: 'rgba(0,240,255,0.06)', color: 'rgba(0,240,255,0.6)', border: '1px solid rgba(0,240,255,0.1)' }}
+            >
+              Try ArcWork on Testnet
+            </span>
             <h2 style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 300, letterSpacing: '-0.02em' }}>
-              Recommended for You
+              Get started in <span style={{ color: '#00F0FF' }}>3 steps</span>
             </h2>
             <p className="mt-3 text-sm font-extralight" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              Get started with these popular actions on Arc Testnet.
+              Connect your wallet and try each feature on Arc Testnet — powered by USDC.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {recommended.map((r, i) => (
-              <div key={i} className="section-reveal feature-card group" style={{ transitionDelay: `${i * 0.08}s` }}>
-                <div className="text-2xl mb-4 transition-transform duration-300 group-hover:scale-110">{r.icon}</div>
-                <h4 className="text-sm font-normal mb-2">{r.title}</h4>
-                <p className="text-xs font-extralight mb-4 leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                  {r.desc}
-                </p>
-                <span 
-                  className="text-[10px] font-light px-2.5 py-1 rounded-full self-start"
-                  style={{ background: 'rgba(0,240,255,0.06)', color: 'rgba(0,240,255,0.6)' }}
-                >
-                  {r.tag}
-                </span>
-              </div>
+            {[
+              {
+                step: '1',
+                title: 'Mint Achievement',
+                desc: 'Claim your first soulbound NFT badge. Non-transferable proof of contribution on-chain.',
+                href: '/achievements',
+                tag: 'Soulbound NFT',
+                icon: '⬡',
+              },
+              {
+                step: '2',
+                title: 'Send an Invoice',
+                desc: 'Create a USDC invoice with built-in escrow. Set amount, recipient, and settle on-chain.',
+                href: '/invoice',
+                tag: 'USDC Escrow',
+                icon: '◈',
+              },
+              {
+                step: '3',
+                title: 'Start a Subscription',
+                desc: 'Set up recurring USDC payments. Automatic billing with customizable plans.',
+                href: '/subscription',
+                tag: 'Recurring Pay',
+                icon: '◎',
+              },
+              {
+                step: '4',
+                title: 'View Dashboard',
+                desc: 'Track all your achievements, invoices, and subscriptions in one unified dashboard.',
+                href: '/dashboard',
+                tag: 'Overview',
+                icon: '⬡',
+              },
+            ].map((r, i) => (
+              <Link key={i} href={r.href} className="section-reveal block" style={{ transitionDelay: `${i * 0.08}s` }}>
+                <div className="feature-card h-full group">
+                  <div className="flex items-center justify-between mb-4">
+                    <div 
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all duration-300 group-hover:scale-110"
+                      style={{ 
+                        background: 'rgba(0,240,255,0.08)', 
+                        color: '#00F0FF',
+                      }}
+                    >
+                      {r.icon}
+                    </div>
+                    <span 
+                      className="text-xs font-medium w-7 h-7 rounded-full flex items-center justify-center"
+                      style={{ background: 'rgba(0,240,255,0.1)', color: '#00F0FF' }}
+                    >
+                      {r.step}
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-normal mb-2">{r.title}</h4>
+                  <p className="text-xs font-extralight mb-4 leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    {r.desc}
+                  </p>
+                  <span 
+                    className="text-[10px] font-light px-2.5 py-1 rounded-full self-start"
+                    style={{ background: 'rgba(0,240,255,0.06)', color: 'rgba(0,240,255,0.6)' }}
+                  >
+                    {r.tag}
+                  </span>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -442,24 +492,18 @@ export default function Home() {
 
         <div className="max-w-2xl mx-auto section-reveal relative z-10">
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 300, letterSpacing: '-0.03em', lineHeight: '1.2' }}>
-            Ready to build on{' '}
-            <span className="glow-text" style={{ color: '#00F0FF' }}>Arc</span>?
+            Try <span className="glow-text" style={{ color: '#00F0FF' }}>ArcWork</span> now
           </h2>
           <p className="mt-5 text-sm font-extralight leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            Deploy your first contract, create an invoice, or start earning badges today.
+            Connect your wallet, mint your first achievement badge, send an invoice, or set up a subscription — all on Arc Testnet.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/dashboard" className="btn-primary">
-              Open Dashboard
+            <Link href="/achievements" className="btn-primary">
+              Mint Your First Badge
             </Link>
-            <a 
-              href="https://faucet.circle.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="btn-ghost"
-            >
-              Get Testnet USDC
-            </a>
+            <Link href="/invoice" className="btn-ghost">
+              Try Invoices
+            </Link>
           </div>
         </div>
       </section>
