@@ -5,9 +5,9 @@ import Link from 'next/link';
 export default function Footer() {
   const links = [
     { label: 'Dashboard', href: '/dashboard' },
-    { label: 'Achievements', href: '/achievements' },
-    { label: 'Invoices', href: '/invoice' },
-    { label: 'Subscriptions', href: '/subscription' },
+    { label: 'New Project', href: '/invoice' },
+    { label: 'Work Proof', href: '/achievements' },
+    { label: 'Retainers V2', href: '/subscription' },
   ];
 
   const externalLinks = [
@@ -32,7 +32,7 @@ export default function Footer() {
               <span className="text-base font-medium" style={{ color: '#00F0FF' }}>ArcWork</span>
             </div>
             <p className="text-xs font-extralight leading-relaxed max-w-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
-              The all-in-one platform for achievements, invoices, and subscriptions on Arc Network — powered by USDC.
+              USDC milestone escrow for freelance projects, settled on Arc.
             </p>
           </div>
 

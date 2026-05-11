@@ -27,9 +27,9 @@ export default function RootLayout({
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/logo.png" />
         <meta name="theme-color" content="#000000" />
-        <meta name="description" content="ArcWork — Achievement, Invoice & Subscription dApp on Arc Network. Build workflows on programmable money." />
+        <meta name="description" content="ArcWork Milestone Pay — USDC escrow and milestone invoicing for freelance work settled on Arc." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>ArcWork — Build on Programmable Money</title>
+        <title>ArcWork — USDC Milestone Escrow on Arc</title>
       </head>
       <body className={inter.className} style={{ background: '#000', color: '#FFF' }}>
         <WebGLBackground />

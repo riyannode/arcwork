@@ -17,9 +17,8 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
-    { href: '/achievements', label: 'Achievements' },
-    { href: '/invoice', label: 'Invoices' },
-    { href: '/subscription', label: 'Subscriptions' },
+    { href: '/invoice', label: 'New Project' },
+    { href: '/achievements', label: 'Work Proof' },
   ];
 
   useEffect(() => {
@@ -44,36 +43,14 @@ export default function Navbar() {
     connect({ connector });
   }, [connect]);
 
-  // Detect MetaMask
-  const hasMetaMask = typeof window !== 'undefined' && !!(window as any).ethereum?.isMetaMask;
-
   const walletOptions = [
     {
-      id: 'metamask',
-      name: 'MetaMask',
-      icon: '🦊',
-      description: 'Connect with MetaMask browser extension',
-      connector: connectors.find(c => c.id === 'metaMask' || c.name === 'MetaMask'),
-      installed: hasMetaMask,
-      recommended: true,
-    },
-    {
       id: 'injected',
-      name: 'Browser Wallet',
-      icon: '🌐',
-      description: 'Connect with any injected wallet',
-      connector: connectors.find(c => c.id === 'injected' && c.name !== 'MetaMask'),
-      installed: true,
-      recommended: false,
-    },
-    {
-      id: 'walletconnect',
-      name: 'WalletConnect',
-      icon: '📱',
-      description: 'Scan QR code with your mobile wallet',
-      connector: connectors.find(c => c.id === 'walletConnect'),
-      installed: true,
-      recommended: false,
+      name: 'MetaMask / Browser Wallet',
+      icon: '◈',
+      description: 'Connect with MetaMask or any injected wallet',
+      connector: connectors.find(c => c.id === 'injected'),
+      recommended: true,
     },
   ].filter(w => w.connector); // Only show available connectors
 
@@ -333,18 +310,6 @@ export default function Navbar() {
                         >
                           Recommended
                         </span>
-                      )}
-                      {!wallet.installed && wallet.id === 'metamask' && (
-                        <a 
-                          href="https://metamask.io/download/" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-[10px] font-light px-2 py-0.5 rounded-full"
-                          style={{ background: 'rgba(255,200,0,0.1)', color: 'rgba(255,200,0,0.8)' }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Install
-                        </a>
                       )}
                     </div>
                     <span className="text-xs font-extralight" style={{ color: 'rgba(255,255,255,0.35)' }}>
