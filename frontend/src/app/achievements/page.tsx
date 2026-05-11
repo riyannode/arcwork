@@ -22,13 +22,42 @@ export default function WorkProofPage() {
 
   if (!isConnected) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-8">
-        <div className="glass-card max-w-md p-12 text-center">
-          <div className="mb-6 text-4xl text-cyan-300">◇</div>
-          <h2 className="mb-4 text-2xl font-light">Connect Wallet</h2>
-          <p className="text-sm font-extralight leading-7 text-white/50">
-            Connect your wallet to view completed work proof from ArcWork escrow projects.
-          </p>
+      <div className="relative px-6 py-20">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-[0.85fr_1.15fr]">
+          <div>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300/70">
+              Try without wallet
+            </p>
+            <h1 className="font-[var(--font-display)] text-[34px] font-semibold tracking-[-0.03em] md:text-[48px]">
+              Proof badge after paid work completes
+            </h1>
+            <p className="mt-3 max-w-xl text-sm leading-7 text-white/50">
+              WorkProof is emitted after all milestones are released, tying reputation to paid delivery instead of empty engagement.
+            </p>
+            <Link href="/invoice" className="btn-primary mt-8 inline-block">
+              Preview Escrow Flow
+            </Link>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-white/[0.035] p-6">
+            <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/[0.06] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-cyan-200/70">WorkProof badge</p>
+              <h2 className="mt-3 text-2xl font-semibold">Brand site redesign completed</h2>
+              <p className="mt-3 text-sm leading-7 text-white/50">
+                1,250 USDC settled across 3 milestones on Arc Testnet.
+              </p>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+                  <p className="text-xs text-white/35">Project ID</p>
+                  <p className="mt-2 font-mono text-sm">#24</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+                  <p className="text-xs text-white/35">Event</p>
+                  <p className="mt-2 font-mono text-sm text-cyan-200">WorkProofMinted</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

@@ -2,128 +2,168 @@
 
 import Link from 'next/link';
 
-const flow = [
+const accessRows = [
   {
-    step: '01',
-    title: 'Create project',
-    body: 'Freelancer defines the client, scope, and milestone amounts in USDC.',
+    icon: 'description',
+    title: 'Create escrow',
+    body: 'Project scope and milestones',
+    href: '/invoice',
   },
   {
-    step: '02',
-    title: 'Fund escrow',
-    body: 'Client approves USDC and funds the full project into ArcWork escrow.',
+    icon: 'account_balance',
+    title: 'Fund project',
+    body: 'Client locks USDC on Arc',
+    href: '/dashboard',
   },
   {
-    step: '03',
-    title: 'Submit work',
-    body: 'Freelancer submits milestone delivery links once work is ready.',
+    icon: 'task_alt',
+    title: 'Submit milestone',
+    body: 'Freelancer attaches proof',
+    href: '/project/24',
   },
   {
-    step: '04',
-    title: 'Release payout',
-    body: 'Client approves each milestone and USDC settles to the freelancer on Arc.',
+    icon: 'verified',
+    title: 'Release work proof',
+    body: 'Payment and badge history',
+    href: '/achievements',
   },
 ];
 
-const metrics = [
-  { label: 'Settlement layer', value: 'Arc' },
-  { label: 'Payment asset', value: 'USDC' },
-  { label: 'Escrow model', value: 'Milestone' },
-  { label: 'Proof layer', value: 'Completed work' },
+const stats = [
+  ['LOCKED', '1,250', 'USDC in demo escrow'],
+  ['MILESTONE', '02', 'Submitted for approval'],
+  ['SETTLEMENT', 'Arc', 'Testnet execution layer'],
+  ['PROOF', 'Pending', 'Minted after release'],
+];
+
+const telemetry = [
+  ['Client funds', '1,250 USDC', 'left-[10%] top-[31%]'],
+  ['Active milestone', 'Submitted', 'left-[42%] top-[10%]'],
+  ['Release rule', 'Approval only', 'right-[5%] top-[35%]'],
+  ['Proof of work', 'Pending', 'right-[8%] bottom-[16%]'],
+  ['Arc escrow', 'Stable', 'left-[36%] bottom-[13%]'],
 ];
 
 export default function Home() {
   return (
-    <div className="relative">
-      <section className="px-6 py-24 md:py-32">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div>
-            <div className="mb-8 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2">
-              <span className="pulse-dot" />
-              <span className="text-xs font-light uppercase tracking-[0.24em] text-white/50">
-                Arc-native USDC escrow
-              </span>
-            </div>
+    <div className="relative overflow-hidden bg-[#090a0a] text-[#e7eeee]">
+      <section className="mx-auto w-full max-w-[1440px] px-5 py-8 md:px-10 md:py-10">
+        <div className="relative min-h-[calc(100vh-112px)] overflow-hidden rounded-[2px] border border-[#22292a] bg-[#080909] px-5 py-10 md:px-8 md:py-12 lg:px-12">
+          <div className="pointer-events-none absolute left-0 top-0 h-16 w-16 border-l border-t border-[#566163]" />
+          <div className="pointer-events-none absolute right-0 top-0 h-16 w-16 border-r border-t border-[#566163]" />
+          <div className="pointer-events-none absolute bottom-0 left-0 h-16 w-16 border-b border-l border-[#566163]" />
+          <div className="pointer-events-none absolute bottom-0 right-0 h-16 w-16 border-b border-r border-[#566163]" />
+          <div className="pointer-events-none absolute inset-0 opacity-[0.22] dot-pattern" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[620px] w-[620px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#55dfe7]/[0.035] blur-3xl" />
 
-            <h1 className="max-w-4xl text-[42px] font-light leading-[1.05] text-white md:text-[72px]">
-              Milestone payments for real freelance work.
-            </h1>
-
-            <p className="mt-7 max-w-2xl text-base font-light leading-8 text-white/50">
-              ArcWork lets freelancers and agencies create USDC project invoices, lock client funds in escrow,
-              and release payouts milestone-by-milestone with transparent settlement on Arc.
-            </p>
-
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Link href="/invoice" className="btn-primary">
-                Create Project
-              </Link>
-              <Link href="/dashboard" className="btn-ghost">
-                View Dashboard
-              </Link>
-            </div>
-          </div>
-
-          <div className="glass-card p-6 md:p-8">
-            <div className="mb-7 flex items-start justify-between gap-6">
-              <div>
-                <p className="text-xs font-light uppercase tracking-[0.24em] text-cyan-300/70">
-                  Live escrow path
+          <div className="relative z-10 grid min-h-[420px] grid-cols-1 items-center gap-10 lg:grid-cols-[0.88fr_1.12fr]">
+            <div className="max-w-[560px]">
+              <div className="mb-6 flex items-center gap-3">
+                <span className="h-2 w-2 rounded-sm bg-[#55dfe7] shadow-[0_0_16px_rgba(85,223,231,0.75)]" />
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#777f80]">
+                  Built on Arc
                 </p>
-                <h2 className="mt-3 text-2xl font-light">Design sprint invoice</h2>
               </div>
-              <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs text-emerald-200">
-                Fundable
+
+              <h1 className="font-[var(--font-display)] text-[34px] font-normal leading-[1.02] tracking-[-0.04em] text-[#f4f7f7] sm:text-[40px] md:text-[58px] md:leading-[0.98] md:tracking-[-0.045em]">
+                Milestone payments
+                <br />
+                for real work, built on Arc
+              </h1>
+
+              <p className="mt-6 max-w-[460px] text-sm leading-7 text-[#8f999a] md:text-base">
+                ArcWork turns freelance projects into a readable settlement map: funds locked, milestones submitted,
+                payouts released, and proof recorded on Arc.
+              </p>
+
+              <div className="mt-7 space-y-2.5">
+                {accessRows.map((row) => (
+                  <Link
+                    key={row.title}
+                    href={row.href}
+                    className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-md transition duration-300 hover:border-[#55dfe7]/35 hover:bg-white/[0.075]"
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#111515] text-[#dfe8e8]">
+                      <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+                        {row.icon}
+                      </span>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold text-[#f1f5f5]">{row.title}</span>
+                      <span className="mt-0.5 block text-xs text-[#879091]">{row.body}</span>
+                    </span>
+                    <span className="material-symbols-outlined text-[18px] text-[#778182] transition group-hover:translate-x-1 group-hover:text-[#55dfe7]" aria-hidden="true">
+                      chevron_right
+                    </span>
+                  </Link>
+                ))}
               </div>
             </div>
 
-            <div className="space-y-4">
-              {flow.map((item) => (
-                <div key={item.step} className="grid grid-cols-[44px_1fr] gap-4 rounded-xl border border-white/10 bg-white/[0.025] p-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-300/10 text-xs text-cyan-200">
-                    {item.step}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-white">{item.title}</h3>
-                    <p className="mt-1 text-sm font-light leading-6 text-white/45">{item.body}</p>
-                  </div>
+            <div className="relative min-h-[380px] lg:min-h-[420px]">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div
+                  className="relative h-[310px] w-[410px] max-w-full"
+                  style={{ perspective: '900px' }}
+                >
+                  <div
+                    className="absolute left-1/2 top-1/2 h-[300px] w-[400px] -translate-x-1/2 -translate-y-1/2 border border-[#15383b]"
+                    style={{
+                      transform: 'rotateX(62deg) rotateZ(42deg)',
+                      backgroundImage:
+                        'linear-gradient(rgba(85,223,231,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(85,223,231,0.12) 1px, transparent 1px)',
+                      backgroundSize: '24px 24px',
+                    }}
+                  />
+
+                  <div
+                    className="absolute left-1/2 top-[48%] h-[180px] w-[300px] -translate-x-1/2 -translate-y-1/2 bg-[#0e2628]"
+                    style={{
+                      transform: 'rotateX(60deg) rotateZ(42deg)',
+                      boxShadow: '0 28px 0 #050606',
+                    }}
+                  />
+                  <div
+                    className="absolute left-1/2 top-[46%] h-[106px] w-[180px] -translate-x-1/2 -translate-y-1/2 bg-[#102f32]"
+                    style={{
+                      transform: 'rotateX(60deg) rotateZ(42deg)',
+                      boxShadow: '0 20px 0 #050606',
+                    }}
+                  />
+                  <div className="absolute left-1/2 top-[34%] h-[126px] w-14 -translate-x-1/2 rounded-sm bg-gradient-to-b from-[#16d6e4] to-[#0c8892] shadow-[0_0_35px_rgba(85,223,231,0.35)]" />
+
+                  <div className="absolute left-1/2 top-[32%] h-[160px] w-[250px] -translate-x-1/2 rounded-[50%] border border-[#0aa7b4]" />
+                  <div className="absolute left-1/2 top-[33%] h-[118px] w-[190px] -translate-x-1/2 rounded-[50%] border border-[#0a6870]" />
+
+                  {['left-[20%] top-[30%]', 'left-[34%] top-[17%]', 'right-[23%] top-[20%]', 'right-[19%] top-[48%]', 'left-[32%] bottom-[19%]', 'right-[34%] bottom-[18%]'].map((position) => (
+                    <span
+                      key={position}
+                      className={`absolute h-6 w-6 rotate-45 rounded-sm bg-[#18d7e6] shadow-[0_0_18px_rgba(85,223,231,0.55)] ${position}`}
+                    />
+                  ))}
+
+                  {telemetry.map(([label, value, position]) => (
+                    <div
+                      key={label}
+                      className={`absolute rounded-lg border border-[#175c63] bg-[#071010]/85 px-3 py-2 text-xs backdrop-blur-md ${position}`}
+                    >
+                      <p className="font-semibold text-[#cbd5d6]">{label}</p>
+                      <p className="mt-1 font-mono text-[#55dfe7]">{value}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="border-y border-white/10 bg-white/[0.02] px-6 py-10">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 md:grid-cols-4">
-          {metrics.map((metric) => (
-            <div key={metric.label} className="py-4">
-              <p className="text-xs font-light uppercase tracking-[0.2em] text-white/35">{metric.label}</p>
-              <p className="mt-2 text-xl font-light text-white">{metric.value}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-6 py-20">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 md:grid-cols-3">
-          <div>
-            <p className="text-xs font-light uppercase tracking-[0.24em] text-cyan-300/70">Why ArcWork</p>
-            <h2 className="mt-4 text-3xl font-light leading-tight">
-              Escrow is the product. Badges and retainers come after real payments.
-            </h2>
-          </div>
-          <div className="glass-card p-6">
-            <h3 className="text-base font-light">Freelancer protection</h3>
-            <p className="mt-3 text-sm font-light leading-7 text-white/45">
-              Work starts after the client has locked USDC. The freelancer sees funded status before delivery.
-            </p>
-          </div>
-          <div className="glass-card p-6">
-            <h3 className="text-base font-light">Client control</h3>
-            <p className="mt-3 text-sm font-light leading-7 text-white/45">
-              Funds release only after milestone approval, keeping payment transparent without platform custody.
-            </p>
+          <div className="relative z-10 mt-4 grid grid-cols-1 overflow-hidden rounded-xl border border-white/10 bg-black/20 md:grid-cols-4">
+            {stats.map(([label, value, body]) => (
+              <div key={label} className="border-b border-white/10 p-4 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#777f80]">{label}</p>
+                <p className="mt-3 font-[var(--font-display)] text-2xl font-normal tracking-[-0.03em] text-[#f5f7f7]">{value}</p>
+                <p className="mt-2 text-xs text-[#7e8788]">{body}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
