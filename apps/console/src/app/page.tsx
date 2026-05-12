@@ -18,13 +18,14 @@
 
 import DotMatrixField from '@/components/DotMatrixField';
 import {
-  ArchVisual,
+  HexGrid3D,
   HomeFeaturedCard,
   HomeFooterStrip,
   HomeHeader,
   HomeHero,
   HomeProtocolSection,
   HomeSidebar,
+  LiveLogStream,
 } from '@/components/home';
 
 export default function Home() {
@@ -42,9 +43,12 @@ export default function Home() {
         <div className="relative mx-auto grid max-w-[1600px] grid-cols-1 gap-8 px-6 py-12 md:grid-cols-[1.05fr_0.95fr] md:gap-14 md:px-12 md:py-20 lg:px-20">
           <HomeHero />
 
-          <div className="relative flex min-h-[520px] items-center justify-center md:min-h-[740px]">
-            <ArchVisual />
-            <HomeFeaturedCard />
+          <div className="relative flex min-h-[520px] flex-col gap-8 md:min-h-[780px]">
+            <div className="relative flex flex-1 items-center justify-center">
+              <HexGrid3D />
+              <HomeFeaturedCard />
+            </div>
+            <LiveLogStream />
           </div>
         </div>
 

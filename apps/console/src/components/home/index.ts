@@ -24,5 +24,7 @@ export { default as HomeStats } from './HomeStats';
 export { default as HomeProofStrip } from './HomeProofStrip';
 export { default as HomeFeaturedCard } from './HomeFeaturedCard';
 export { default as ArchVisual } from './ArchVisual';
+export { default as HexGrid3D } from './HexGrid3D';
+export { default as LiveLogStream } from './LiveLogStream';
 export { default as HomeProtocolSection } from './HomeProtocolSection';
 export { default as HomeFooterStrip } from './HomeFooterStrip';
