@@ -210,7 +210,7 @@ export default function HexGrid3D() {
       aria-hidden="true"
     >
       {/* Layer 1 — outer dashed orbital rings (rotate Z, slow CW) */}
-      <div className="hex-layer-outer absolute" style={{ width: 640, height: 640 }}>
+      <div className="hex-layer-outer absolute" style={{ width: 560, height: 560 }}>
         <svg viewBox="-320 -320 640 640" className="h-full w-full">
           <circle
             cx="0"
@@ -242,7 +242,7 @@ export default function HexGrid3D() {
       </div>
 
       {/* Layer 2 — hex cells stage (Y-axis, main honeycomb) */}
-      <div className="hex-stage relative" style={{ width: 640, height: 640 }}>
+      <div className="hex-stage relative" style={{ width: 560, height: 560 }}>
         <div
           className="absolute inset-0"
           style={{
