@@ -4,6 +4,7 @@ import { PrivyProvider } from '@privy-io/react-auth';
 import { WagmiProvider } from '@privy-io/wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { arcTestnet } from '@arclayer/sdk';
+import AutoSwitchArcChain from './AutoSwitchArcChain';
 import { config } from '@/lib/wagmi';
 
 const queryClient = new QueryClient();
@@ -44,7 +45,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       }}
     >
       <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={config}>{children}</WagmiProvider>
+        <WagmiProvider config={config}>
+          <AutoSwitchArcChain />
+          {children}
+        </WagmiProvider>
       </QueryClientProvider>
     </PrivyProvider>
   );
