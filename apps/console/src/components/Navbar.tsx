@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, MouseEvent } from 'react';
 import ArcMark from './ArcMark';
-import MotionToggle from './MotionToggle';
 
 /**
  * Unified top navigation — single source of truth for both landing (`/`) and
@@ -128,7 +127,7 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* TESTNET indicator + Motion toggle + Wallet + Mobile hamburger — pinned to viewport right */}
+        {/* TESTNET indicator + Wallet + Mobile hamburger — pinned to viewport right */}
         <div className="flex items-center gap-3 pr-3 md:pr-10">
           {isLanding && (
             <div className="hidden items-center gap-2 sm:flex">
@@ -141,8 +140,6 @@ export default function Navbar() {
               </span>
             </div>
           )}
-
-          <MotionToggle />
 
           <WalletStatus variant={isLanding ? 'landing' : 'app'} />
 
