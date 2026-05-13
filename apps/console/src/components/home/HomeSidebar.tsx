@@ -15,31 +15,28 @@ const items = [
 
 export default function HomeSidebar() {
   return (
-    <>
-      <div className="fixed bottom-0 left-[56px] top-[82px] z-20 hidden w-px bg-white/8 md:block" aria-hidden="true" />
-      <aside
-        className="fixed left-0 top-[82px] z-20 hidden h-[calc(100vh-82px)] w-[56px] flex-col items-center justify-between py-10 md:flex"
-        style={{ background: 'rgba(5, 5, 5, 0.35)' }}
-        aria-label="Landing sidebar"
-      >
-        <nav className="flex flex-col items-center gap-10">
-          {items.map((it) => (
-            <a
-              key={it.label}
-              href={it.href}
-              className="aureo-sidebar-label text-[#7A7A7A] transition-colors duration-300 hover:text-[#C5A67C]"
-            >
-              {it.label}
-            </a>
-          ))}
-        </nav>
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-px bg-gradient-to-b from-[#C5A67C]/40 to-transparent" />
-          <span className="font-mono text-[9px] tracking-[0.22em] text-[#7A7A7A] [writing-mode:vertical-rl] rotate-180">
-            v0.1.0
-          </span>
-        </div>
-      </aside>
-    </>
+    <aside
+      className="fixed left-0 top-[82px] z-20 hidden h-[calc(100vh-82px)] w-[56px] flex-col items-center justify-between border-r border-white/8 py-10 md:flex"
+      style={{ background: 'rgba(5, 5, 5, 0.35)' }}
+      aria-label="Landing sidebar"
+    >
+      <nav className="flex flex-col items-center gap-10">
+        {items.map((it) => (
+          <a
+            key={it.label}
+            href={it.href}
+            className="aureo-sidebar-label text-[#7A7A7A] transition-colors duration-300 hover:text-[#C5A67C]"
+          >
+            {it.label}
+          </a>
+        ))}
+      </nav>
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-8 w-px bg-gradient-to-b from-[#C5A67C]/40 to-transparent" />
+        <span className="font-mono text-[9px] tracking-[0.22em] text-[#7A7A7A] [writing-mode:vertical-rl] rotate-180">
+          v0.1.0
+        </span>
+      </div>
+    </aside>
   );
 }
