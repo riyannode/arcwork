@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useMotionMode } from '@/hooks/useMotionMode';
 
 /**
  * Ambient ArcLayer background.
@@ -9,13 +10,19 @@ import { useEffect, useRef } from 'react';
  * - Pointer parallax
  * - Scanline sweep
  * - DOM fallback behind canvas
+ *
+ * In LITE mode: returns null, skipping all canvas init. Saves ~2-4MB RAM and
+ * a continuous rAF loop on mobile/low-power devices. Static site gradients and
+ * CSS noise in globals.css still provide the ambient texture.
  */
 export default function DotMatrixField() {
+  const { mode, hydrated } = useMotionMode();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pointerRef = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (mode === 'lite') return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { alpha: true });
@@ -190,11 +197,13 @@ export default function DotMatrixField() {
       }}
     >
       <div className="absolute inset-0 dot-pattern opacity-30" />
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 h-full w-full opacity-75"
-        style={{ mixBlendMode: 'screen' }}
-      />
+      {mode === 'full' && (
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 h-full w-full opacity-75"
+          style={{ mixBlendMode: 'screen' }}
+        />
+      )}
       <div
         className="absolute inset-0"
         style={{

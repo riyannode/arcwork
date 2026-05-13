@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useMotionMode } from '@/hooks/useMotionMode';
 
 /**
  * HexGrid3D — 3D rotating honeycomb (no center logo; logo moved to header).
@@ -16,6 +17,10 @@ import { useEffect, useRef, useState } from 'react';
  * Particle trails (gold dots) spawn from the core every ~0.9s and fly toward
  * a random active hex cell — communicating "the logo broadcasts signals to
  * contracts". Pool-based, zero runtime alloc spam.
+ *
+ * In LITE motion mode: skips rAF loop, particle sim, and mouse parallax.
+ * Keeps only the static SVG layers (outer rings + hex cells) — much lighter
+ * for mobile/low-power devices.
  */
 
 type HexCell = {
@@ -100,6 +105,8 @@ function makeParticles(): Particle[] {
 }
 
 export default function HexGrid3D() {
+  const { mode } = useMotionMode();
+  const isLite = mode === 'lite';
   const stageRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const mouseRef = useRef({ tx: 0, ty: 0, x: 0, y: 0 }); // target + current (lerped)
@@ -122,6 +129,7 @@ export default function HexGrid3D() {
 
   // Track cursor relative to stage center (-1..1 per axis)
   useEffect(() => {
+    if (isLite) return;
     if (reducedMotionRef.current) return;
     const onMove = (e: MouseEvent) => {
       const el = stageRef.current;
@@ -136,10 +144,11 @@ export default function HexGrid3D() {
     };
     window.addEventListener('mousemove', onMove, { passive: true });
     return () => window.removeEventListener('mousemove', onMove);
-  }, []);
+  }, [isLite]);
 
   // RAF: smooth parallax + particle sim
   useEffect(() => {
+    if (isLite) return;
     if (reducedMotionRef.current) return;
 
     const tick = (t: number) => {
@@ -194,7 +203,7 @@ export default function HexGrid3D() {
     return () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     };
-  }, []);
+  }, [isLite]);
 
   return (
     <div
