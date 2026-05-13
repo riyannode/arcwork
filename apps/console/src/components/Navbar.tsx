@@ -1,24 +1,51 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { shortenAddress } from '@/lib/contracts';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, MouseEvent } from 'react';
 import ArcMark from './ArcMark';
 
+/**
+ * Unified top navigation — single source of truth for both landing (`/`) and
+ * app pages (`/dashboard`, `/agents`, `/jobs`, `/docs`).
+ *
+ * Depth comes from behavior, not styling forks:
+ *   - 4 nav items, same order, everywhere.
+ *   - PROTOCOL is a smart anchor: in-page smooth scroll on `/`, route+hash
+ *     jump on any other page.
+ *   - WalletStatus is always present; it renders the context-correct CTA
+ *     (CONNECT → OPEN CONSOLE on landing when authenticated → address pill
+ *     in-app) internally via the `variant` prop.
+ *   - LIVE · ARC indicator is landing-only flavor, not a separate navbar.
+ */
+
+// Privy SDK only initializes client-side. Dynamic-import w/ ssr:false avoids
+// hydration mismatch (React #425/#418/#423) that crashes the whole Navbar tree.
+const WalletStatus = dynamic(() => import('./WalletStatus'), {
+  ssr: false,
+  loading: () => (
+    <div
+      className="px-3 py-2 font-mono text-[10px] tracking-[0.18em] text-white/40"
+      style={{ border: '1px solid rgba(255, 255, 255, 0.08)' }}
+    >
+      LOADING…
+    </div>
+  ),
+});
+
+const NAV_LINKS = [
+  { href: '/protocol', label: 'PROTOCOL', anchor: null },
+  { href: '/agents', label: 'AGENTS', anchor: null },
+  { href: '/jobs', label: 'JOBS', anchor: null },
+  { href: '/docs', label: 'SDK', anchor: null },
+] as const;
+
 export default function Navbar() {
-  const { ready, authenticated, user, login, logout } = usePrivy();
   const pathname = usePathname();
+  const isLanding = pathname === '/';
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const navLinks = [
-    { href: '/dashboard', label: 'PROTOCOL' },
-    { href: '/jobs', label: 'JOBS' },
-    { href: '/agents', label: 'AGENTS' },
-    { href: '/docs', label: 'SDK' },
-  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -26,11 +53,20 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Resolve address: prefer linked wallet, fall back to embedded wallet
-  const address =
-    user?.wallet?.address ||
-    user?.linkedAccounts?.find((acc) => acc.type === 'wallet')?.address ||
-    '';
+  // Smart anchor: if we're already on the page that owns the anchor, prevent
+  // the full navigation and smooth-scroll instead. Otherwise let <Link> do its
+  // normal route + hash handling (browser auto-scrolls to #id on load).
+  const handleAnchorClick = (anchorId: string) => (e: MouseEvent<HTMLAnchorElement>) => {
+    if (pathname !== '/') return;
+    e.preventDefault();
+    document.getElementById(anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setMenuOpen(false);
+  };
+
+  const isLinkActive = (href: string, anchor: string | null) => {
+    if (anchor) return false; // anchor links never show active underline
+    return pathname === href || pathname.startsWith(href + '/');
+  };
 
   return (
     <nav
@@ -40,9 +76,9 @@ export default function Navbar() {
         height: scrolled ? '60px' : '72px',
       }}
     >
-      <div className="mx-auto flex h-full w-full max-w-screen-2xl items-center justify-between px-5 transition-all duration-500 md:px-10">
-        {/* Brand — logo + wordmark */}
-        <Link href="/" className="group flex items-center gap-3" aria-label="ArcLayer home">
+      <div className="flex h-full w-full items-center justify-between transition-all duration-500">
+        {/* Brand — pinned to viewport left (aligns with HomeSidebar column) */}
+        <Link href="/" className="group flex items-center gap-3 pl-3 md:pl-4" aria-label="ArcLayer home">
           <div className="relative transition-transform duration-300 group-hover:scale-105">
             <ArcMark size={scrolled ? 26 : 30} />
           </div>
@@ -61,12 +97,13 @@ export default function Navbar() {
 
         {/* Desktop Links */}
         <div className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
+          {NAV_LINKS.map((link) => {
+            const isActive = isLinkActive(link.href, link.anchor);
             return (
               <Link
-                key={link.href}
+                key={link.label}
                 href={link.href}
+                onClick={link.anchor ? handleAnchorClick(link.anchor) : undefined}
                 className="relative px-4 py-2 transition-all duration-300"
                 style={{
                   fontFamily: 'Inter, sans-serif',
@@ -90,47 +127,21 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* Wallet + Mobile */}
-        <div className="flex items-center gap-3">
-          {!ready ? (
-            <div
-              className="px-3 py-2 font-mono text-[10px] tracking-[0.18em] text-white/40"
-              style={{ border: '1px solid rgba(255, 255, 255, 0.08)' }}
-            >
-              LOADING…
-            </div>
-          ) : authenticated && address ? (
-            <div className="flex items-center gap-2">
-              <div
-                className="flex items-center gap-2 px-3 py-2 font-mono text-[11px]"
-                style={{
-                  background: 'rgba(197, 166, 124, 0.08)',
-                  color: '#C5A67C',
-                  border: '1px solid rgba(197, 166, 124, 0.25)',
-                }}
+        {/* LIVE·ARC indicator (landing-only) + Wallet + Mobile hamburger — pinned to viewport right */}
+        <div className="flex items-center gap-3 pr-3 md:pr-10">
+          {isLanding && (
+            <div className="hidden items-center gap-2 sm:flex">
+              <span className="pulse-dot" />
+              <span
+                className="font-mono text-[11px] tracking-[0.2em] text-[#B8CD7E]"
+                style={{ fontWeight: 500 }}
               >
-                <span className="pulse-dot" />
-                {shortenAddress(address)}
-              </div>
-              <button
-                onClick={() => logout()}
-                className="px-3 py-2 font-mono text-[10px] tracking-[0.18em] text-white/40 transition-all duration-300"
-                style={{ border: '1px solid rgba(255, 255, 255, 0.08)' }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,100,100,0.5)'; e.currentTarget.style.color = '#ff6464'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}
-              >
-                DISCONNECT
-              </button>
+                LIVE · ARC
+              </span>
             </div>
-          ) : (
-            <button
-              onClick={login}
-              className="btn-primary"
-              style={{ padding: '10px 18px', fontSize: '11px' }}
-            >
-              CONNECT WALLET
-            </button>
           )}
+
+          <WalletStatus variant={isLanding ? 'landing' : 'app'} />
 
           <button
             className="md:hidden flex flex-col gap-1.5 p-2"
@@ -156,13 +167,16 @@ export default function Navbar() {
         }}
       >
         <div className="px-6 py-5 space-y-1">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href;
+          {NAV_LINKS.map((link) => {
+            const isActive = isLinkActive(link.href, link.anchor);
             return (
               <Link
-                key={link.href}
+                key={link.label}
                 href={link.href}
-                onClick={() => setMenuOpen(false)}
+                onClick={(e) => {
+                  if (link.anchor) handleAnchorClick(link.anchor)(e);
+                  setMenuOpen(false);
+                }}
                 className="block py-3 px-4 transition-all duration-200"
                 style={{
                   fontFamily: 'Inter, sans-serif',

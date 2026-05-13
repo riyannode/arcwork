@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {!isLanding && <WebGLBackground />}
         <Providers>
           <div className="relative z-10 min-h-screen flex flex-col">
-            {!isLanding && <Navbar />}
+            <Navbar />
             <main key={pathname} className="flex-1 page-transition">{children}</main>
             {!isLanding && <Footer />}
           </div>

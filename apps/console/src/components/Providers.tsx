@@ -28,12 +28,32 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <PrivyProvider
       appId={PRIVY_APP_ID}
       config={{
-        loginMethods: ['email', 'google', 'twitter', 'wallet'],
+        loginMethods: ['email', 'google', 'wallet'],
         appearance: {
           theme: 'dark',
           accentColor: '#C5A67C',
-          logo: '/logo.png',
+          logo: '/arc-brand.svg',
           showWalletLoginFirst: false,
+          // EIP-6963-first wallet list. `detected_ethereum_wallets` renders
+          // each installed extension as its own button, routed by RDNS — no
+          // window.ethereum fallback, so OKX's "Default Wallet" toggle cannot
+          // hijack a MetaMask click. Generic brand buttons (metamask, okx_wallet
+          // etc) were removed because they fall back to window.ethereum when
+          // EIP-6963 resolution misses, which was causing wrong-wallet popups.
+          //
+          // `wallet_connect` stays for mobile + desktop wallets that can't be
+          // detected locally. `safe` stays for multisig flows.
+          walletList: [
+            'detected_ethereum_wallets',
+            'wallet_connect',
+            'safe',
+          ],
+          walletChainType: 'ethereum-only',
+        },
+        externalWallets: {
+          walletConnect: {
+            enabled: true,
+          },
         },
         embeddedWallets: {
           ethereum: {
