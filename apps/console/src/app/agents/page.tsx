@@ -73,8 +73,8 @@ export default function AgentsPage() {
   }
 
   return (
-    <div className="relative px-6 py-16 md:px-10 md:py-20">
-      <div className="mx-auto max-w-7xl">
+    <div className="aureo-page">
+      <div className="aureo-shell">
         <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="aureo-mono-label mb-3">PROTOCOL · AGENTS</div>
@@ -115,7 +115,7 @@ export default function AgentsPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <section className="p-6" style={{ border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(10, 10, 10, 0.6)' }}>
+          <section className="aureo-panel p-4 md:p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="aureo-mono-label mb-2">LEDGER</div>
@@ -129,7 +129,7 @@ export default function AgentsPage() {
                   <Link
                     key={a.agentId}
                     href={`/agent/${a.agentId}`}
-                    className="ledger-row block border border-white/10 bg-black/20 px-4 py-3"
+                    className="aureo-list-card block px-4 py-3 md:px-5 md:py-4"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <span className="font-mono text-[12.5px] text-[#EAE4D8]">Agent #{a.agentId}</span>
@@ -149,7 +149,7 @@ export default function AgentsPage() {
             </div>
           </section>
 
-          <section className="p-6" style={{ border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(10, 10, 10, 0.6)' }}>
+          <section className="aureo-panel p-4 md:p-6">
             <div className="aureo-mono-label mb-2">ACTION · WRITE</div>
             <h2 className="aureo-display text-[28px] text-[#EAE4D8]">Register agent</h2>
             <code className="mt-2 block font-mono text-[10.5px] text-[#7A7A7A]">AgentRegistry.registerAgent(agentId, skillHash, metadataURI)</code>
