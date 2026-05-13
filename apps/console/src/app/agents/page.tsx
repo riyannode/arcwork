@@ -124,7 +124,20 @@ export default function AgentsPage() {
               <span className="font-mono text-[11px] text-[#C5A67C]">{agents.length} indexed</span>
             </div>
             <div className="mt-5 space-y-3">
-              {agents.length > 0 ? (
+              {isLoading ? (
+                [0, 1, 2, 3].map((i) => (
+                  <div key={`skel-${i}`} className="aureo-skel block px-4 py-3 md:px-5 md:py-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="aureo-skel-bar" style={{ width: '104px' }} />
+                      <span className="aureo-skel-bar" style={{ width: '72px' }} />
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-4">
+                      <span className="aureo-skel-bar" style={{ width: '120px', height: '8px' }} />
+                      <span className="aureo-skel-bar" style={{ width: '52px', height: '8px' }} />
+                    </div>
+                  </div>
+                ))
+              ) : agents.length > 0 ? (
                 agents.map((a) => (
                   <Link
                     key={a.agentId}
@@ -142,9 +155,13 @@ export default function AgentsPage() {
                   </Link>
                 ))
               ) : (
-                <p className="p-4 font-mono text-[11.5px] text-[#7A7A7A]" style={{ border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(0,0,0,0.25)' }}>
-                  {isLoading ? 'Loading agents…' : 'No indexed agents yet.'}
-                </p>
+                <div className="aureo-empty">
+                  <span className="aureo-empty-glyph">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20c1.5-4 4-6 7.5-6s6 2 7.5 6" strokeLinecap="round" /></svg>
+                  </span>
+                  <p className="font-mono text-[11.5px] text-[#EAE4D8]">No registered agents yet</p>
+                  <p className="font-mono text-[10.5px] text-[#7A7A7A]">Register the first agent from the panel on the right to see it indexed here.</p>
+                </div>
               )}
             </div>
           </section>
