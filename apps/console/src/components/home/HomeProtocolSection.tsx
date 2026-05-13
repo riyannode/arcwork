@@ -33,9 +33,9 @@ export default function HomeProtocolSection() {
   return (
     <section
       id="protocol"
-      className="relative z-20 border-t border-white/8 px-6 py-16 md:px-12 md:pl-[80px] md:py-24 lg:px-24"
+      className="relative z-20 border-t border-white/8 px-6 py-14 md:px-8 md:py-20 lg:px-10 xl:px-12"
     >
-      <div className="mx-auto max-w-[1600px]">
+      <div className="w-full">
         <div className="mb-12 grid grid-cols-1 gap-10 md:grid-cols-[1fr_1.2fr] md:items-end">
           <div>
             <h2 className="aureo-display text-[52px] text-[#EAE4D8] md:text-[72px]">
