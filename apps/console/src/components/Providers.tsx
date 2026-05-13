@@ -19,8 +19,9 @@ const PRIVY_APP_ID =
  *   PrivyProvider → WagmiProvider (Privy's) → QueryClientProvider
  *
  * This gives us:
- * - Email / Google / Twitter login (embedded wallets auto-provisioned)
- * - External wallet connect (MetaMask, Rabby, Phantom, etc.) via WalletConnect
+ * - External wallet connect (top-popular: MetaMask, Coinbase, Rabby,
+ *   Phantom, Rainbow, OKX) + WalletConnect for mobile
+ * - Email login (embedded wallets auto-provisioned for non-crypto users)
  * - Full wagmi hooks compatibility in downstream components
  */
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -28,25 +29,30 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <PrivyProvider
       appId={PRIVY_APP_ID}
       config={{
-        loginMethods: ['email', 'google', 'wallet'],
+        loginMethods: ['wallet', 'email'],
         appearance: {
           theme: 'dark',
           accentColor: '#C5A67C',
           logo: '/arc-brand.svg',
-          showWalletLoginFirst: false,
-          // EIP-6963-first wallet list. `detected_ethereum_wallets` renders
-          // each installed extension as its own button, routed by RDNS — no
-          // window.ethereum fallback, so OKX's "Default Wallet" toggle cannot
-          // hijack a MetaMask click. Generic brand buttons (metamask, okx_wallet
-          // etc) were removed because they fall back to window.ethereum when
-          // EIP-6963 resolution misses, which was causing wrong-wallet popups.
+          showWalletLoginFirst: true,
+          // Curated top-popular wallet list. Explicitly NOT using
+          // `detected_ethereum_wallets` because it auto-enumerates every
+          // installed EIP-6963 provider (SubWallet, Frame, Brave, etc.)
+          // cluttering the modal. Named IDs keep the list short and
+          // recognizable. Privy v2 resolves named IDs via RDNS-first
+          // EIP-6963, so clicking "MetaMask" routes to the real MetaMask
+          // provider when installed, not window.ethereum.
           //
-          // `wallet_connect` stays for mobile + desktop wallets that can't be
-          // detected locally. `safe` stays for multisig flows.
+          // `wallet_connect` stays for mobile + desktop wallets not in
+          // the curated list.
           walletList: [
-            'detected_ethereum_wallets',
+            'metamask',
+            'coinbase_wallet',
+            'rabby_wallet',
+            'phantom',
+            'rainbow',
+            'okx_wallet',
             'wallet_connect',
-            'safe',
           ],
           walletChainType: 'ethereum-only',
         },
