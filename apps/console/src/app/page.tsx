@@ -45,13 +45,13 @@ export default function Home() {
         Vertical padding reduced so first viewport fits: nav → hero → CTAs → proof → stats → right column
         without the lower cards being pushed below the fold at 80–90% zoom.
       */}
-      <main className="relative z-20 min-h-[calc(100svh-80px)] overflow-x-clip pl-3 pr-3 pt-6 pb-7 md:pl-[72px] md:pr-4 md:pt-7 md:pb-8 lg:pl-[86px] xl:pl-[98px] 2xl:pl-[110px]">
-        <div className="relative grid min-h-[calc(100svh-80px)] grid-cols-1 gap-y-6 md:grid-cols-12 md:items-center md:gap-x-16 xl:gap-x-20 2xl:gap-x-24">
-          <div className="md:col-span-5 md:max-w-[540px] md:justify-self-start">
+      <main className="relative z-20 min-h-[calc(100svh-80px)] overflow-x-clip pl-3 pr-3 pt-7 pb-6 md:pl-[88px] md:pr-5 md:pt-8 md:pb-7 lg:pl-[100px] lg:pr-7 xl:pl-[112px] xl:pr-9">
+        <div className="relative grid min-h-[calc(100svh-80px)] grid-cols-1 gap-y-5 md:grid-cols-12 md:items-center md:gap-x-12 xl:gap-x-14 2xl:gap-x-16">
+          <div className="md:col-span-6 md:max-w-[532px] md:justify-self-start md:pl-4 lg:pl-6">
             <HomeHero />
           </div>
 
-          <div className="relative flex flex-col gap-4 md:col-span-7 md:min-h-[500px] md:justify-self-end md:w-full md:max-w-[860px]">
+          <div className="relative flex flex-col gap-3.5 md:col-span-6 md:min-h-[480px] md:justify-self-end md:w-full md:max-w-[820px]">
             {/* Hex grid — logo floats solo */}
             <div className="relative flex flex-1 items-center justify-center">
               <HexGrid3D />

@@ -15,7 +15,7 @@ import HomeStats from './HomeStats';
  */
 export default function HomeHero() {
   return (
-    <div className="relative flex max-w-[540px] flex-col justify-center">
+    <div className="relative flex max-w-[532px] flex-col justify-center">
       {/* Kicker */}
       <div className="mb-2.5 flex flex-col gap-1">
         <span className="aureo-mono-label">AGENTIC</span>
@@ -26,7 +26,7 @@ export default function HomeHero() {
       <h1
         className="aureo-display text-[#EAE4D8]"
         style={{
-          fontSize: 'clamp(34px, 3.6vw, 62px)',
+          fontSize: 'clamp(32px, 3.25vw, 56px)',
           lineHeight: 0.9,
         }}
       >
@@ -45,7 +45,7 @@ export default function HomeHero() {
       </h1>
 
       {/* Divider */}
-      <div className="my-3.5 flex max-w-[460px] items-center gap-3">
+      <div className="my-3 flex max-w-[450px] items-center gap-3">
         <span className="h-px flex-1 bg-white/15" />
         <span
           className="h-[10px] w-[10px] rotate-45 border border-[#C5A67C]/60"
@@ -64,9 +64,9 @@ export default function HomeHero() {
       </p>
 
       {/* Developer quickstart */}
-      <div className="mt-2.5 max-w-[500px]">
+      <div className="mt-2 max-w-[490px]">
         <div className="aureo-mono-label mb-1.5">QUICKSTART</div>
-        <pre className="code-block py-2.5">
+        <pre className="code-block py-2">
 <span className="tok-c"># install workspace SDK</span>{'\n'}
 <span className="tok-k">pnpm</span> add @arclayer/sdk{'\n'}{'\n'}
 <span className="tok-c">// read contract + query job</span>{'\n'}
@@ -77,7 +77,7 @@ export default function HomeHero() {
       </div>
 
       {/* CTAs */}
-      <div className="mt-3.5 flex flex-col items-start gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+      <div className="mt-3 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-2.5">
         <Link href="/dashboard" className="btn-primary">
           OPEN PROTOCOL CONSOLE
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
