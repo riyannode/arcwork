@@ -35,7 +35,10 @@ export default function HomeProtocolSection() {
       id="protocol"
       className="relative z-20 px-6 py-16 md:px-12 md:pl-[80px] md:py-24 lg:px-24"
     >
-      <div className="pointer-events-none absolute left-[56px] right-0 top-0 hidden h-px bg-white/8 md:block" aria-hidden="true" />
+      <div
+        className="pointer-events-none absolute left-[56px] top-0 h-px w-[48%] bg-white/8 md:w-[50%] xl:w-[52%] 2xl:w-[56%]"
+        aria-hidden="true"
+      />
       <div className="mx-auto max-w-[1600px]">
         <div className="mb-12 grid grid-cols-1 gap-10 md:grid-cols-[1fr_1.2fr] md:items-end">
           <div>
