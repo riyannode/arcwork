@@ -175,7 +175,10 @@ export default function AgentsPage() {
                 <label className="block font-mono text-[11px] text-[#EAE4D8] mb-2">Agent name</label>
                 <input value={form.agentId} onChange={(e) => setForm((c) => ({ ...c, agentId: e.target.value }))} placeholder="agentId" className="input-mono" />
               </div>
-              <input value={form.skill} onChange={(e) => setForm((c) => ({ ...c, skill: e.target.value }))} placeholder="skill-label" className="input-mono" />
+              <div>
+                <label className="block font-mono text-[11px] text-[#EAE4D8] mb-2">Skills</label>
+                <input value={form.skill} onChange={(e) => setForm((c) => ({ ...c, skill: e.target.value }))} placeholder="skill-label" className="input-mono" />
+              </div>
               <input value={form.metadataURI} onChange={(e) => setForm((c) => ({ ...c, metadataURI: e.target.value }))} placeholder="ipfs://…" className="input-mono" />
             </div>
             <button onClick={handleRegisterAgent} disabled={!isConnected || isSubmitting} className="btn-primary mt-5">
