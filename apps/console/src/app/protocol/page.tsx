@@ -176,13 +176,12 @@ export default function Dashboard() {
             <button onClick={() => { loadOverview({ silent: true }); probeAllRpcs(); }} className="btn-bordered">
               {isRefreshing ? 'SYNCING…' : 'REFRESH'}
             </button>
-            <Link href="/docs" className="btn-primary hidden md:inline-flex">SDK DOCS</Link>
           </div>
         </div>
 
         {/* Telemetry bar: RPC + indexer */}
         <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-[1.4fr_1fr]">
-          <Panel title="RPC · HEALTH" sub={`${RPC_ENDPOINTS.length} endpoints`}>
+          <Panel title="RPC  HEALTH" sub={`${RPC_ENDPOINTS.length} endpoints`}>
             <div className="space-y-2">
               {rpcHealth.length === 0
                 ? RPC_ENDPOINTS.map((ep) => <RpcRow key={ep.label} label={ep.label} latency={null} blockNumber={null} ok={false} loading url={ep.url} />)
@@ -192,7 +191,7 @@ export default function Dashboard() {
                   })}
             </div>
           </Panel>
-          <Panel title="PROTOCOL · HEALTH" sub={fastestRpc ? `fastest rpc: ${fastestRpc.label} (${fastestRpc.latency?.toFixed(0)}ms)` : 'probing rpcs'}>
+          <Panel title="PROTOCOL  HEALTH" sub={fastestRpc ? `fastest rpc: ${fastestRpc.label} (${fastestRpc.latency?.toFixed(0)}ms)` : 'probing rpcs'}>
             <div className="flex flex-col gap-3">
               <div className="flex items-baseline justify-between">
                 <span className="font-mono text-[11px]" style={{ color: 'rgba(234, 228, 216, 0.55)' }}>STATUS</span>
@@ -247,7 +246,7 @@ export default function Dashboard() {
 
         {/* Main grid: jobs + event tail */}
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <Panel title="JOB · LEDGER" sub={`${jobs.length} indexed`} action={<Link href="/jobs" className="font-mono text-[11px]" style={{ color: '#C5A67C' }}>OPEN ALL ↗</Link>}>
+          <Panel title="live jobs" sub={`${jobs.length} indexed`} action={<Link href="/jobs" className="font-mono text-[11px]" style={{ color: '#C5A67C' }}>OPEN ALL ↗</Link>}>
             <div className="mb-3 hidden grid-cols-[40px_1fr_70px_80px_90px] items-center gap-3 border-b border-white/5 pb-2 font-mono text-[10px] uppercase tracking-[0.2em] md:grid" style={{ color: 'rgba(234, 228, 216, 0.4)' }}>
               <span>ID</span><span>CLIENT → WORKER</span><span className="text-right">AGENT</span><span className="text-right">USDC</span><span className="text-right">STATE</span>
             </div>
@@ -272,7 +271,7 @@ export default function Dashboard() {
             </div>
           </Panel>
 
-          <Panel title="EVENT · TAIL" sub={`${events.length} recent`}>
+          <Panel title="EVENT  TAIL" sub={`${events.length} recent`}>
             <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
               {events.length === 0 ? <Empty msg={isLoading ? 'Loading events…' : 'No events yet.'} /> : events.map((ev) => (
                 <div
