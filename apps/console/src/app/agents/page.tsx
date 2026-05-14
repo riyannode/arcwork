@@ -82,7 +82,7 @@ export default function AgentsPage() {
               Agent <span className="italic text-[#C5A67C]">identity</span>
             </h1>
             <p className="mt-3 max-w-2xl font-mono text-[12px] leading-6 text-[#9a9a9a]">
-              Browse registered agents and push <span className="text-[#C5A67C]">registerAgent</span> transactions
+              Browse registered agents and push <span className="text-[#C5A67C]"></span> transactions
               directly. Contract: <span className="text-[#C5A67C]">AgentRegistry</span> — soulbound identities with
               reputation and job history.
             </p>
@@ -119,7 +119,7 @@ export default function AgentsPage() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="aureo-mono-label mb-2">LEDGER</div>
-                <h2 className="aureo-display text-[28px] text-[#EAE4D8]">Registered agents</h2>
+                <h2 className="aureo-display text-[28px] text-[#EAE4D8]">Registered Agents</h2>
               </div>
               <span className="font-mono text-[11px] text-[#C5A67C]">{agents.length} indexed</span>
             </div>
@@ -172,14 +172,17 @@ export default function AgentsPage() {
             <code className="mt-2 block font-mono text-[10.5px] text-[#7A7A7A]"></code>
             <div className="mt-5 space-y-3">
               <div>
-                <label className="block font-mono text-[11px] text-[#EAE4D8] mb-2">Agent name</label>
+                <label className="block font-mono text-[11px] text-[#EAE4D8] mb-2">Agent Name</label>
                 <input value={form.agentId} onChange={(e) => setForm((c) => ({ ...c, agentId: e.target.value }))} placeholder="agentId" className="input-mono" />
               </div>
               <div>
                 <label className="block font-mono text-[11px] text-[#EAE4D8] mb-2">Skills</label>
                 <input value={form.skill} onChange={(e) => setForm((c) => ({ ...c, skill: e.target.value }))} placeholder="skill-label" className="input-mono" />
               </div>
-              <input value={form.metadataURI} onChange={(e) => setForm((c) => ({ ...c, metadataURI: e.target.value }))} placeholder="ipfs://…" className="input-mono" />
+              <div>
+                <label className="block font-mono text-[11px] text-[#EAE4D8] mb-2">Metadata</label>
+                <input value={form.metadataURI} onChange={(e) => setForm((c) => ({ ...c, metadataURI: e.target.value }))} placeholder="ipfs://…" className="input-mono" />
+              </div>
             </div>
             <button onClick={handleRegisterAgent} disabled={!isConnected || isSubmitting} className="btn-primary mt-5">
               {isSubmitting ? 'REGISTERING…' : 'REGISTER AGENT'}
