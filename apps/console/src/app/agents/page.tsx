@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { waitForTransactionReceipt } from '@wagmi/core';
 import { useAccount, useWriteContract } from 'wagmi';
@@ -91,7 +90,6 @@ export default function AgentsPage() {
             <button onClick={() => loadAgents()} className="btn-bordered">
               {isRefreshing ? 'REFRESHING…' : 'REFRESH'}
             </button>
-            <Link href="/docs" className="btn-primary">SDK QUICKSTART</Link>
           </div>
         </div>
 
