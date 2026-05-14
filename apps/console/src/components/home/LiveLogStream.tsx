@@ -35,16 +35,29 @@ export default function LiveLogStream() {
   const [lines, setLines] = useState<LogLine[]>([]);
   const [connected, setConnected] = useState(false);
   const [blockHeight, setBlockHeight] = useState<number | null>(null);
+  const [cursorTime, setCursorTime] = useState<string>('--:--:--');
+  const [mounted, setMounted] = useState(false);
   const seenRef = useRef<Set<string>>(new Set());
+
+  // Initialize cursor time on client mount to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+    setCursorTime(nowHHMMSS());
+    const cursorInterval = setInterval(() => {
+      setCursorTime(nowHHMMSS());
+    }, 1000);
+    return () => clearInterval(cursorInterval);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     // Seed a boot sequence so the panel isn't empty on first paint.
+    const bootTime = nowHHMMSS();
     setLines([
-      { id: 'boot-1', ts: nowHHMMSS(), call: 'arclayer.boot()',      note: 'rpc: testnet 5042002', level: 'dim' },
-      { id: 'boot-2', ts: nowHHMMSS(), call: 'indexer.attach()',     note: 'source: @arclayer/indexer', level: 'dim' },
-      { id: 'boot-3', ts: nowHHMMSS(), call: 'sdk.ready()',          note: 'contracts: 4 loaded', level: 'ok' },
+      { id: 'boot-1', ts: bootTime, call: 'arclayer.boot()',      note: 'rpc: testnet 5042002', level: 'dim' },
+      { id: 'boot-2', ts: bootTime, call: 'indexer.attach()',     note: 'source: @arclayer/indexer', level: 'dim' },
+      { id: 'boot-3', ts: bootTime, call: 'sdk.ready()',          note: 'contracts: 4 loaded', level: 'ok' },
     ]);
 
     const pushMany = (next: LogLine[]) => {
@@ -146,6 +159,98 @@ export default function LiveLogStream() {
     };
   }, []);
 
+  // Don't render log lines until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="llog">
+        <div className="llog-bar">
+          <div className="llog-dots" aria-hidden="true">
+            <span className="llog-dot r" />
+            <span className="llog-dot y" />
+            <span className="llog-dot g" />
+          </div>
+          <span className="llog-title">protocol.arclayer</span>
+          <span className="llog-sep">·</span>
+          <span className="llog-meta">block —</span>
+          <span className="llog-grow" />
+          <span className="llog-status off">
+            <span className="llog-led" />
+            CONNECTING…
+          </span>
+        </div>
+        <div className="llog-body" role="log" aria-live="polite">
+          <div className="llog-line cursor">
+            <span className="llog-ts">--:--:--</span>
+            <span className="llog-chev">❯</span>
+            <span className="llog-caret anim-caret">▍</span>
+          </div>
+        </div>
+        <style jsx>{`
+          .llog {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(5, 5, 5, 0.82);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            display: flex; flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 10px rgba(197,166,124,0.08);
+          }
+          .llog-bar {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(10, 10, 10, 0.95);
+          }
+          .llog-dots { display: inline-flex; gap: 5px; margin-right: 4px; }
+          .llog-dot {
+            width: 8px; height: 8px; border-radius: 9999px;
+            background: rgba(255,255,255,0.15);
+          }
+          .llog-dot.r { background: rgba(230,130,130,0.65); }
+          .llog-dot.y { background: rgba(197,166,124,0.75); }
+          .llog-dot.g { background: rgba(184,205,126,0.7); }
+          .llog-title {
+            font-family: var(--font-mono, ui-monospace, monospace);
+            font-size: 11px; letter-spacing: 0.12em;
+            color: rgba(234,228,216,0.85);
+          }
+          .llog-sep { color: rgba(234,228,216,0.35); }
+          .llog-meta {
+            font-family: var(--font-mono);
+            font-size: 10.5px; color: #C5A67C; letter-spacing: 0.08em;
+          }
+          .llog-grow { flex: 1; }
+          .llog-status {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-family: var(--font-mono); font-size: 10px;
+            letter-spacing: 0.2em; text-transform: uppercase;
+          }
+          .llog-status.off { color: rgba(234,228,216,0.45); }
+          .llog-led {
+            width: 6px; height: 6px; border-radius: 9999px;
+            background: currentColor;
+            box-shadow: 0 0 6px currentColor;
+          }
+          .llog-body {
+            font-family: var(--font-mono);
+            font-size: 11.5px; line-height: 1.7;
+            padding: 10px 14px;
+            min-height: 180px; max-height: 220px;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(5,5,5,0.6) 0%, rgba(5,5,5,0.92) 100%);
+          }
+          .llog-line {
+            display: flex; gap: 10px; align-items: baseline;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+          }
+          .llog-ts    { color: rgba(234,228,216,0.35); min-width: 64px; }
+          .llog-chev  { color: #C5A67C; }
+          .llog-caret { color: #EAE4D8; }
+          .cursor { opacity: 0.75; }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
     <div className="llog">
       <div className="llog-bar">
@@ -177,7 +282,7 @@ export default function LiveLogStream() {
           </div>
         ))}
         <div className="llog-line cursor">
-          <span className="llog-ts">{nowHHMMSS()}</span>
+          <span className="llog-ts">{cursorTime}</span>
           <span className="llog-chev">❯</span>
           <span className="llog-caret anim-caret">▍</span>
         </div>

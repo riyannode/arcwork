@@ -2,6 +2,7 @@
 
 import './globals.css';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Providers from '@/components/Providers';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -9,7 +10,15 @@ import WebGLBackground from '@/components/WebGLBackground';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLanding = pathname === '/';
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Determine if this is the landing page
+  // Only use pathname after mounted to avoid hydration mismatch
+  const isLanding = mounted ? pathname === '/' : false;
 
   return (
     <html lang="en">
@@ -31,12 +40,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>ArcLayer · Protocol layer for the agentic economy</title>
       </head>
       <body style={{ background: '#050505', color: '#EAE4D8' }}>
-        {!isLanding && <WebGLBackground />}
+        {mounted && !isLanding && <WebGLBackground />}
         <Providers>
           <div className="relative z-10 min-h-screen flex flex-col">
             <Navbar />
             <main key={pathname} className="flex-1 page-transition">{children}</main>
-            {!isLanding && <Footer />}
+            {mounted && !isLanding && <Footer />}
           </div>
         </Providers>
       </body>
