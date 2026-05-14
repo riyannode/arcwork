@@ -169,9 +169,12 @@ export default function AgentsPage() {
           <section className="aureo-panel p-4 md:p-6">
             <div className="aureo-mono-label mb-2">ACTION · WRITE</div>
             <h2 className="aureo-display text-[28px] text-[#EAE4D8]">Register agent</h2>
-            <code className="mt-2 block font-mono text-[10.5px] text-[#7A7A7A]">AgentRegistry.registerAgent(agentId, skillHash, metadataURI)</code>
+            <code className="mt-2 block font-mono text-[10.5px] text-[#7A7A7A]"></code>
             <div className="mt-5 space-y-3">
-              <input value={form.agentId} onChange={(e) => setForm((c) => ({ ...c, agentId: e.target.value }))} placeholder="agentId" className="input-mono" />
+              <div>
+                <label className="block font-mono text-[11px] text-[#EAE4D8] mb-2">Agent name</label>
+                <input value={form.agentId} onChange={(e) => setForm((c) => ({ ...c, agentId: e.target.value }))} placeholder="agentId" className="input-mono" />
+              </div>
               <input value={form.skill} onChange={(e) => setForm((c) => ({ ...c, skill: e.target.value }))} placeholder="skill-label" className="input-mono" />
               <input value={form.metadataURI} onChange={(e) => setForm((c) => ({ ...c, metadataURI: e.target.value }))} placeholder="ipfs://…" className="input-mono" />
             </div>
