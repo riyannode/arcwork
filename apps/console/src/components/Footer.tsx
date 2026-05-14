@@ -21,6 +21,29 @@ export default function Footer() {
   return (
     <footer className="relative z-10 w-full border-t border-white/8" style={{ background: 'rgba(5, 5, 5, 0.92)' }}>
       <div className="mx-auto max-w-screen-2xl px-6 py-16 md:px-10">
+        {/* CTA strip */}
+        <div
+          className="mb-12 flex flex-col gap-6 p-8 md:flex-row md:items-center md:justify-between"
+          style={{
+            border: '1px solid rgba(197, 166, 124, 0.2)',
+            background: 'linear-gradient(90deg, rgba(197, 166, 124, 0.06) 0%, rgba(0, 0, 0, 0) 60%)',
+          }}
+        >
+          <div>
+            <div className="aureo-mono-label mb-3">SDK · QUICKSTART</div>
+            <p className="aureo-display text-[28px] text-[#EAE4D8] md:text-[34px]">
+              Build on the <span className="italic text-[#C5A67C]">protocol layer</span>
+            </p>
+            <p className="mt-2 font-mono text-[12px] text-[#7A7A7A]">
+              pnpm add @arclayer/sdk &nbsp;·&nbsp; Arc Testnet &nbsp;·&nbsp; chain 5042002
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Link href="/docs" className="btn-primary">READ DOCS</Link>
+            <Link href="/protocol" className="btn-bordered">OPEN PROTOCOL</Link>
+          </div>
+        </div>
+
         {/* Columns */}
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
