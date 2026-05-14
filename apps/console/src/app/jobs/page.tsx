@@ -134,7 +134,7 @@ export default function JobsPage() {
             </h1>
             <p className="mt-3 max-w-2xl font-mono text-[12px] leading-6 text-[#9a9a9a]">
               Browse JobEscrow records and push create / budget / approve / fund transactions
-              directly from the console. Contracts: <span className="text-[#C5A67C]">JobEscrow, USDC</span>.
+              directly from the console. Contracts: <span className="text-[#C5A67C]">Settlement vault, USDC</span>.
             </p>
           </div>
           <div className="flex gap-3 self-start md:self-auto">
@@ -233,11 +233,14 @@ export default function JobsPage() {
             </div>
 
             <div className="aureo-panel p-4 md:p-6">
-              <div className="aureo-mono-label mb-2">ACTION · WRITE</div>
+              <div className="aureo-mono-label mb-2"></div>
               <h2 className="aureo-display text-[28px] text-[#EAE4D8]">Budget &amp; fund</h2>
               <code className="mt-2 block font-mono text-[10.5px] text-[#7A7A7A]">setBudget → approve USDC → fundJob</code>
               <div className="mt-5 space-y-3">
-                <input value={fundForm.jobId} onChange={(e) => setFundForm((c) => ({ ...c, jobId: e.target.value }))} placeholder="jobId" className="input-mono" />
+                <div>
+                  <label className="block font-mono text-[11px] text-[#EAE4D8] mb-2">Budget</label>
+                  <input value={fundForm.jobId} onChange={(e) => setFundForm((c) => ({ ...c, jobId: e.target.value }))} placeholder="jobId" className="input-mono" />
+                </div>
                 <input value={fundForm.budget} onChange={(e) => setFundForm((c) => ({ ...c, budget: e.target.value }))} placeholder="budget USDC" className="input-mono" />
                 <input value={fundForm.amount} onChange={(e) => setFundForm((c) => ({ ...c, amount: e.target.value }))} placeholder="funding USDC" className="input-mono" />
               </div>
