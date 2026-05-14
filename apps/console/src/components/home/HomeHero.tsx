@@ -63,6 +63,8 @@ export default function HomeHero() {
         <span className="font-mono text-[#C5A67C]">5042002</span>).
       </p>
 
+      <HomeStats />
+
       {/* Developer quickstart */}
       <div className="mt-2 max-w-[500px]">
         <div className="aureo-mono-label mb-1.5">QUICKSTART</div>
@@ -104,7 +106,6 @@ export default function HomeHero() {
       </div>
 
       <HomeProofStrip />
-      <HomeStats />
     </div>
   );
 }
