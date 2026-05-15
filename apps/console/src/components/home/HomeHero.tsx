@@ -15,7 +15,7 @@ import HomeStats from './HomeStats';
  */
 export default function HomeHero() {
   return (
-    <div className="relative flex max-w-[540px] flex-col justify-center">
+    <div className="relative flex max-w-[540px] flex-col justify-center min-h-screen">
       {/* Kicker */}
       <div className="mb-2 flex flex-col gap-1">
         <span className="aureo-mono-label">x402 · USDC ESCROW · PROOF OF WORK</span>
@@ -64,8 +64,8 @@ export default function HomeHero() {
 
 
 
-      {/* CTAs */}
-      <div className="mt-3 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-2.5">
+      {/* CTAs — repositioned to bottom-left */}
+      <div className="absolute left-[280px] bottom-[120px] flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-2.5">
         <Link href="/protocol" className="btn-primary">
           OPEN PROTOCOL CONSOLE
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
