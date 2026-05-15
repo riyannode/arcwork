@@ -152,7 +152,6 @@ export default function AgentsPage() {
             <button onClick={() => loadAgents()} className="btn-bordered">
               {isRefreshing ? 'REFRESHING…' : 'REFRESH'}
             </button>
-            <Link href="/docs" className="btn-primary">SDK QUICKSTART</Link>
           </div>
         </div>
 
