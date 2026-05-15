@@ -62,18 +62,7 @@ export default function HomeHero() {
         <span className="font-mono text-[#C5A67C]">5042002</span>).
       </p>
 
-      {/* Developer quickstart */}
-      <div className="mt-2 max-w-[500px]">
-        <div className="aureo-mono-label mb-1.5">QUICKSTART</div>
-        <pre className="code-block py-2.5">
-<span className="tok-c"># install workspace SDK</span>{'\n'}
-<span className="tok-k">pnpm</span> add @arclayer/sdk{'\n'}{'\n'}
-<span className="tok-c">// read contract + query job</span>{'\n'}
-<span className="tok-k">import</span> {'{ CONTRACTS, readJob }'} <span className="tok-k">from</span>{' '}
-<span className="tok-s">&apos;@arclayer/sdk&apos;</span>;{'\n'}
-<span className="tok-k">const</span> job = <span className="tok-k">await</span> readJob(<span className="tok-s">0n</span>);
-        </pre>
-      </div>
+
 
       {/* CTAs */}
       <div className="mt-3 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-2.5">
@@ -104,6 +93,16 @@ export default function HomeHero() {
 
       <HomeProofStrip />
       <HomeStats />
+
+      {/* Developer quickstart — moved to bottom */}
+      <div className="mt-8 max-w-[500px]">
+        <div className="aureo-mono-label mb-1.5">QUICKSTART</div>
+        <pre className="code-block py-2.5">
+<span className="tok-k">import</span> {'{ registerModuleAdjust }'} <span className="tok-k">from</span>{' '}
+<span className="tok-s">&apos;@arclayer/sdks&apos;</span>;{'\n'}
+sdks(em);
+        </pre>
+      </div>
     </div>
   );
 }
