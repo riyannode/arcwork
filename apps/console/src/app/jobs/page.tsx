@@ -155,7 +155,6 @@ export default function JobsPage() {
             <button onClick={() => loadJobs()} className="btn-bordered">
               {isRefreshing ? 'REFRESHING…' : 'REFRESH'}
             </button>
-            <Link href="/protocol" className="btn-primary">BACK · CONSOLE</Link>
           </div>
         </div>
 
