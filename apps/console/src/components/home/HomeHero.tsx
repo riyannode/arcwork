@@ -93,16 +93,6 @@ export default function HomeHero() {
 
       <HomeProofStrip />
       <HomeStats />
-
-      {/* Developer quickstart — moved to bottom */}
-      <div className="mt-8 max-w-[500px]">
-        <div className="aureo-mono-label mb-1.5">QUICKSTART</div>
-        <pre className="code-block py-2.5">
-<span className="tok-k">import</span> {'{ registerModuleAdjust }'} <span className="tok-k">from</span>{' '}
-<span className="tok-s">&apos;@arclayer/sdks&apos;</span>;{'\n'}
-sdks(em);
-        </pre>
-      </div>
     </div>
   );
 }
