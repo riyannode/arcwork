@@ -7,7 +7,7 @@ import { formatUSDC, shortenAddress } from '@/lib/contracts';
 import { fetchIndexerJson, type DashboardOverview } from '@/lib/indexer';
 
 const JOB_STATUS = ['Created', 'Budgeted', 'Funded', 'Submitted', 'Evaluated', 'Settled', 'Cancelled'] as const;
-const JOB_TONE: Record<number, string> = { 0: '', 1: 'pending', 2: 'pending', 3: 'pending', 4: 'pending', 5: 'active', 6: 'error' };
+const JOB_TONE: Record<number, string> = { 0: '', 1: 'pending', 2: 'pending', 3: 'pending', 4: 'pending', 5: 'success', 6: 'error' };
 
 const RPC_ENDPOINTS = [
   { label: 'rpc.testnet.arc.network', url: 'https://rpc.testnet.arc.network' },
