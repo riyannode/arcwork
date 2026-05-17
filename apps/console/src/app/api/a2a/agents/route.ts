@@ -40,7 +40,8 @@ function ipfsToGateway(uri: string) {
 function isSafeHttpUri(uri: string) {
   try {
     const url = new URL(ipfsToGateway(uri));
-    return url.protocol === 'https:' || url.protocol === 'http:';
+    // Only HTTPS allowed. http:// is unsafe for metadata fetches.
+    return url.protocol === 'https:';
   } catch {
     return false;
   }

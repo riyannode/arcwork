@@ -54,6 +54,10 @@ function extractPaymentProof(req: NextRequest): { proof: unknown; header: 'PAYME
   return null;
 }
 
+function isValidAgentRouteId(id: string): boolean {
+  return /^[a-zA-Z0-9_-]{1,64}$/.test(id);
+}
+
 // ─── Payment requirements builders ──────────────────────────────────────────
 
 function receiver(): `0x${string}` {
@@ -241,9 +245,11 @@ async function handleArcNativePayment(
   const payment = facilitator.parsePaymentFromRequest(req);
 
   if (!payment) {
+    // Trust only the agentId injected by the route handler (route param), never body.agentId.
+    const trustedAgentId = typeof body.agentId === 'string' ? body.agentId : '';
     return {
       ok: false,
-      response: paymentRequiredResponse(resource, body.agentId as string || '', body.jobId as string | undefined),
+      response: paymentRequiredResponse(resource, trustedAgentId, body.jobId as string | undefined),
     };
   }
 
@@ -322,6 +328,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const agentId = params.id;
+
+  if (!isValidAgentRouteId(agentId)) {
+    return NextResponse.json(
+      { error: 'invalid_agent_id', message: 'Agent ID must be 1-64 alphanumeric, dash, or underscore characters.' },
+      { status: 400 }
+    );
+  }
+
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const resource = `/api/agents/${agentId}/run`;
 
