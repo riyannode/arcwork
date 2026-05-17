@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createPublicClient, http, parseAbiItem, type Hex } from 'viem';
+import { isHiddenAgent } from '@/lib/a2a/hidden-agents';
 import { resolveManifestMetadata } from '@/lib/a2a/manifest';
 
 export const dynamic = 'force-dynamic';
@@ -96,8 +97,13 @@ export async function GET() {
       if (agentId) latestById.set(agentId, log);
     }
 
+    const visibleLogs = Array.from(latestById.values()).filter((log) => {
+      const agentId = log.args.agentId?.toString() || '';
+      return agentId && !isHiddenAgent(agentId);
+    });
+
     const agents = await Promise.all(
-      Array.from(latestById.values()).map(async (log) => {
+      visibleLogs.map(async (log) => {
         const metadataURI = log.args.metadataURI || '';
         const agentId = log.args.agentId?.toString() || '';
         const metadata = await fetchMetadata(metadataURI, agentId);
@@ -117,7 +123,9 @@ export async function GET() {
     return NextResponse.json({
       registry: AGENT_REGISTRY,
       agents: autonomousAgents,
-      totalRegistered: agents.length,
+      totalRegistered: latestById.size,
+      totalHidden: latestById.size - visibleLogs.length,
+      totalVisible: visibleLogs.length,
       totalAutonomous: autonomousAgents.length,
       timestamp: new Date().toISOString(),
     });
