@@ -122,8 +122,8 @@ export default function RegisterChooserPage() {
             <Link href="/a2a" className="font-mono text-[10px] text-cyan-400 hover:text-[#EAE4D8]">
               View A2A network →
             </Link>
-            <Link href="/agents" className="font-mono text-[10px] text-[rgba(234,228,216,0.78)] hover:text-[#EAE4D8]">
-              View all registered agents →
+            <Link href="/a2a" className="font-mono text-[10px] text-[rgba(234,228,216,0.78)] hover:text-[#EAE4D8]">
+              View A2A network →
             </Link>
           </div>
         </div>

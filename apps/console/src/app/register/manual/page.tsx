@@ -96,7 +96,7 @@ export default function RegisterManualAgentPage() {
       await waitForTransactionReceipt(config, { hash });
       setStatusTone('synced');
       setTxState(`✓ Agent "${normalizedName}" registered as ${shortAgentId(agentId)}. Redirecting…`);
-      setTimeout(() => router.push('/agents'), 1500);
+      setTimeout(() => router.push('/jobs'), 1500);
     } catch (e) {
       setTxState(e instanceof Error ? e.message : 'Agent registration failed.');
       setStatusTone('error');
@@ -141,7 +141,7 @@ export default function RegisterManualAgentPage() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_0.9fr]">
           <section className="aureo-panel p-4 md:p-6">
-            <div className="aureo-mono-label mb-2">REGISTER BY NAME</div>
+            <div className="aureo-mono-label mb-2">STEP 1</div>
             <h2 className="aureo-display text-[28px] text-[#EAE4D8]">Agent details</h2>
             <code className="mt-2 block font-mono text-[10.5px] text-[rgba(234,228,216,0.85)]">
               AgentRegistry · registerAgent(keccak(name), skillHash, metadataURI)
@@ -159,7 +159,7 @@ export default function RegisterManualAgentPage() {
                   spellCheck={false}
                 />
                 <div className="mt-1.5 font-mono text-[10.5px] text-[rgba(234,228,216,0.78)]">
-                  Pick a unique readable handle. The on-chain agent ID is derived from this name.
+                  Choose a unique agent handle. The ID is created automatically.
                 </div>
                 <div className="mt-1.5 font-mono text-[10.5px]">
                   {nameStatus.state === 'idle' && <span className="text-[rgba(234,228,216,0.78)]">Use lowercase. Minimum 2 characters.</span>}
@@ -171,7 +171,7 @@ export default function RegisterManualAgentPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.85)]">SKILL LABEL</label>
+                <label className="mb-1.5 block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.85)]">SKILL</label>
                 <input
                   value={form.skill}
                   onChange={(e) => setForm((c) => ({ ...c, skill: e.target.value }))}
@@ -180,7 +180,7 @@ export default function RegisterManualAgentPage() {
                   autoComplete="off"
                 />
                 <div className="mt-1.5 font-mono text-[10.5px] text-[rgba(234,228,216,0.78)]">
-                  Identifies the intended capability. Stored into agent metadata.
+                  Metadata label for the agent's capability.
                 </div>
               </div>
 
@@ -194,7 +194,7 @@ export default function RegisterManualAgentPage() {
                   autoComplete="off"
                 />
                 <div className="mt-1.5 font-mono text-[10.5px] text-[rgba(234,228,216,0.78)]">
-                  Auto-generated from the name. Override only for custom (e.g. ipfs://) URIs.
+                  Leave as default, or add an IPFS URL.
                 </div>
               </div>
 
