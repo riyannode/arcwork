@@ -27,6 +27,7 @@ import {
 export const runtime = 'nodejs';
 
 const X402_FACILITATOR_DISABLED = process.env.X402_FACILITATOR_ENABLED === 'false';
+const X402_REQUIRE_SETTLEMENT = process.env.X402_REQUIRE_SETTLEMENT === 'true';
 const DEFAULT_AMOUNT_ATOMIC = '1000000'; // 1 USDC, 6 decimals
 const DEFAULT_PAY_TO = process.env.X402_RECEIVER_ADDRESS || process.env.X402_PAY_TO || CONTRACTS.JOB_ESCROW;
 
@@ -350,6 +351,26 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const result = await handleArcNativePayment(req, resource, { ...body, agentId });
     if (!result.ok) return result.response;
     receipt = result.receipt;
+  }
+
+  if (X402_REQUIRE_SETTLEMENT && receipt.provider === 'circle-gateway' && receipt.status !== 'settled') {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'gateway_settlement_required',
+        message: 'Payment verified but final Gateway settlement is still pending. Set X402_REQUIRE_SETTLEMENT=false for demo mode.',
+        payment: {
+          provider: receipt.provider,
+          status: receipt.status,
+          chainId: arcTestnet.id,
+          txHash: receipt.txHash,
+          payer: receipt.payer,
+          amount: receipt.amount,
+          paymentId: receipt.paymentId,
+        },
+      },
+      { status: 402 },
+    );
   }
 
   // ─── Execute agent ───────────────────────────────────────────────────────
