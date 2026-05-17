@@ -34,7 +34,7 @@ export default function Footer() {
             <p className="aureo-display text-[28px] text-[#EAE4D8] md:text-[34px]">
               Build on the <span className="italic text-[#C5A67C]">protocol layer</span>
             </p>
-            <p className="mt-2 font-mono text-[12px] text-[#7A7A7A]">
+            <p className="mt-2 font-mono text-[12px] text-[#a0a0a0]">
               pnpm add @arclayer/sdk &nbsp;·&nbsp; Arc Testnet &nbsp;·&nbsp; chain 5042002
             </p>
           </div>
@@ -53,7 +53,7 @@ export default function Footer() {
                 ARCLAYER
               </span>
             </div>
-            <p className="mt-5 max-w-[360px] font-mono text-[11.5px] leading-6 text-[#7A7A7A]">
+            <p className="mt-5 max-w-[360px] font-mono text-[11.5px] leading-6 text-[#a0a0a0]">
                   x402 payment, USDC escrow, and WorkProof reputation infrastructure for agent builders and developers — on Arc.
             </p>
             <div className="mt-6 flex items-center gap-2">
@@ -88,7 +88,7 @@ export default function Footer() {
                     rel={l.ext ? 'noopener noreferrer' : undefined}
                     className="font-mono text-[11px] text-[#c5c0b2] transition-colors hover:text-[#C5A67C]"
                   >
-                    {l.label} <span className="text-[#7A7A7A]">↗</span>
+                    {l.label} <span className="text-[#a0a0a0]">↗</span>
                   </a>
                 </li>
               ))}
@@ -116,7 +116,7 @@ export default function Footer() {
 
         {/* Bottom row */}
         <div className="mt-12 flex items-center justify-center border-t border-white/8 pt-8">
-          <p className="font-mono text-[10.5px] tracking-[0.12em] text-[#7A7A7A]">
+          <p className="font-mono text-[10.5px] tracking-[0.12em] text-[#a0a0a0]">
             © 2026 ARCLAYER · PAYMENT INFRASTRUCTURE FOR AGENTS READY TO SHIP
           </p>
         </div>

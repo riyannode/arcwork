@@ -328,9 +328,9 @@ export default function AgentsPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-[12px] text-[#EAE4D8]">{hasName ? label : `Agent ${label}`}</span>
-                          {hasName && <span className="font-mono text-[10px] text-[rgba(234,228,216,0.72)]">{shortAgentId(a.agentId)}</span>}
+                          {hasName && <span className="font-mono text-[10px] text-[rgba(234,228,216,0.85)]">{shortAgentId(a.agentId)}</span>}
                         </div>
-                        <div className="mt-0.5 font-mono text-[10px] text-[rgba(234,228,216,0.72)]">
+                        <div className="mt-0.5 font-mono text-[10px] text-[rgba(234,228,216,0.85)]">
                           controller {shortenAddress(a.controller)}
                         </div>
                       </div>
@@ -369,12 +369,12 @@ export default function AgentsPage() {
                   {agents.length > 0 ? (
                     <>
                       <p className="font-mono text-[11.5px] text-[#EAE4D8]">No agents match your search</p>
-                      <p className="font-mono text-[10.5px] text-[rgba(234,228,216,0.7)]">Try a different keyword or clear the filter.</p>
+                      <p className="font-mono text-[10.5px] text-[rgba(234,228,216,0.84)]">Try a different keyword or clear the filter.</p>
                     </>
                   ) : (
                     <>
                       <p className="font-mono text-[11.5px] text-[#EAE4D8]">No registered agents yet</p>
-                      <p className="font-mono text-[10.5px] text-[rgba(234,228,216,0.7)]">Complete Step 1 on the right. Your first registered agent will appear here automatically.</p>
+                      <p className="font-mono text-[10.5px] text-[rgba(234,228,216,0.84)]">Complete Step 1 on the right. Your first registered agent will appear here automatically.</p>
                     </>
                   )}
                 </div>
@@ -395,7 +395,7 @@ export default function AgentsPage() {
           <section className="aureo-panel p-4 md:p-6">
             <div className="aureo-mono-label mb-2">STEP 1 · REGISTER BY NAME</div>
             <h2 className="aureo-display text-[28px] text-[#EAE4D8]">Register agent</h2>
-            <code className="mt-2 block font-mono text-[10.5px] text-[rgba(234,228,216,0.72)]">Agent Registry · registerAgent(keccak(name), skillHash, metadataURI)</code>
+            <code className="mt-2 block font-mono text-[10.5px] text-[rgba(234,228,216,0.85)]">Agent Registry · registerAgent(keccak(name), skillHash, metadataURI)</code>
 
             <div className="mt-5 space-y-4">
               <div>
@@ -444,7 +444,7 @@ export default function AgentsPage() {
 
               {derivedAgentId !== null && (
                 <div className="rounded-none border border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.3)] px-4 py-3">
-                  <div className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-[rgba(234,228,216,0.72)]">Derived On-Chain Agent ID</div>
+                  <div className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-[rgba(234,228,216,0.85)]">Derived On-Chain Agent ID</div>
                   <div className="mt-1 font-mono text-[11px] text-[#EAE4D8]">{shortAgentId(derivedAgentId)}</div>
                   <div className="mt-1 break-all font-mono text-[10px] leading-5 text-[rgba(234,228,216,0.78)]">{derivedAgentId.toString()}</div>
                 </div>
