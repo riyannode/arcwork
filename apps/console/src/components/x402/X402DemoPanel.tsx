@@ -172,7 +172,7 @@ export default function X402DemoPanel({ compact = false }: X402DemoPanelProps) {
       log(`Signature created: ${paymentPayload.payload.signature.slice(0, 18)}...`, 'success');
     } catch (e) { log(`Signature failed: ${e instanceof Error ? e.message : String(e)}`, 'error'); setStep('error'); return; }
 
-    const body = { x402Version: 2, paymentPayload, paymentRequirements: req };
+    const body = { x402Version: 2, paymentRail: 'arc-native', selfHosted: true, paymentPayload, paymentRequirements: req };
 
     setStep('verifying');
     log('4/9 Verifying canonical exact payment...');
@@ -291,7 +291,7 @@ export default function X402DemoPanel({ compact = false }: X402DemoPanelProps) {
       log(`Signature created: ${paymentPayload.payload.signature.slice(0, 18)}...`, 'success');
     } catch (e) { log(`Signature failed: ${e instanceof Error ? e.message : String(e)}`, 'error'); setStep('error'); return; }
 
-    const body = { x402Version: 2, paymentPayload, paymentRequirements: gwOption };
+    const body = { x402Version: 2, paymentRail: 'circle-gateway', paymentPayload, paymentRequirements: gwOption };
 
     setStep('verifying');
     log('[GW] 4/7 Verifying via BatchFacilitatorClient...');
@@ -323,7 +323,7 @@ export default function X402DemoPanel({ compact = false }: X402DemoPanelProps) {
     setStep('retrying');
     log('[GW] 6/7 Retrying protected resource with PAYMENT-SIGNATURE header...');
     const header = b64(paymentPayload);
-    const unlockedResp = await fetch('/api/x402-demo/protected', { headers: { 'PAYMENT-SIGNATURE': header, 'X-PAYMENT': header } });
+    const unlockedResp = await fetch('/api/x402-demo/protected', { headers: { 'PAYMENT-SIGNATURE': header } });
     const unlockedJson = await unlockedResp.json();
     if (!unlockedResp.ok || !unlockedJson.unlocked) { log(`Protected retry failed: ${unlockedJson.error || unlockedResp.status}`, 'error'); setStep('error'); return; }
     setUnlocked(true);
@@ -332,7 +332,7 @@ export default function X402DemoPanel({ compact = false }: X402DemoPanelProps) {
 
     setStep('replay');
     log('[GW] 8/8 Replay test: reusing same PAYMENT-SIGNATURE...');
-    const replayResp = await fetch('/api/x402-demo/protected', { headers: { 'PAYMENT-SIGNATURE': header, 'X-PAYMENT': header } });
+    const replayResp = await fetch('/api/x402-demo/protected', { headers: { 'PAYMENT-SIGNATURE': header } });
     const replayJson = await replayResp.json();
     const replayRejected = !replayResp.ok || replayJson.error === 'gateway_payment_replayed' || replayJson.error === 'nonce_used' || replayJson.error === 'payment_already_used';
     if (replayRejected) {
@@ -601,7 +601,7 @@ export default function X402DemoPanel({ compact = false }: X402DemoPanelProps) {
           <DevDetails>
             {mode === 'arc-native'
               ? <div>Technical path: x402 exact · EIP-3009 transferWithAuthorization · network {NETWORK} · X-PAYMENT · self-hosted relayer · nonce replay protection.</div>
-              : <div>Technical path: GatewayWalletBatched · PAYMENT-SIGNATURE · BatchFacilitatorClient verify/settle · local paymentId replay ledger.</div>}
+              : <div>Technical path: GatewayWalletBatched · PAYMENT-SIGNATURE · /api/x402/settle (circle-gateway rail) · consume-once replay ledger.</div>}
           </DevDetails>
         </div>
       </aside>
