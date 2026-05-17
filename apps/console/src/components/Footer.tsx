@@ -24,28 +24,23 @@ export default function Footer() {
         {/* CTA strip */}
         <div
           className="mb-12 flex flex-col gap-6 p-8 md:flex-row md:items-center md:justify-between"
-          style={{
-            border: '1px solid rgba(197, 166, 124, 0.2)',
-            background: 'linear-gradient(90deg, rgba(197, 166, 124, 0.06) 0%, rgba(0, 0, 0, 0) 60%)',
-          }}
+          style={{ border: '1px solid transparent' }}
+          aria-hidden="true"
         >
           <div>
-            <div className="aureo-mono-label mb-3">SDK · QUICKSTART</div>
-            <p className="aureo-display text-[28px] text-[#EAE4D8] md:text-[34px]">
-              Build on the <span className="italic text-[#C5A67C]">protocol layer</span>
+            <div className="aureo-mono-label mb-3">&nbsp;</div>
+            <p className="aureo-display text-[28px] md:text-[34px]" style={{ color: 'transparent' }}>
+              &nbsp;
             </p>
-            <p className="mt-2 font-mono text-[12px] text-[#a0a0a0]">
-              pnpm add @arclayer/sdk &nbsp;·&nbsp; Arc Testnet &nbsp;·&nbsp; chain 5042002
+            <p className="mt-2 font-mono text-[12px]" style={{ color: 'transparent' }}>
+              &nbsp;
             </p>
           </div>
-          <div className="flex gap-3">
-            <Link href="/docs" className="btn-primary">READ DOCS</Link>
-            <Link href="/protocol" className="btn-bordered">OPEN PROTOCOL</Link>
-          </div>
+          <div className="flex gap-3" />
         </div>
 
         {/* Columns */}
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="mt-4 grid grid-cols-1 gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-3">
               <ArcMark size={28} />
