@@ -124,13 +124,13 @@ begin
   -- return ok=true so the caller can retry. This is safe because failed rows
   -- have no on-chain effect (settle never happened) and the same payer+nonce
   -- still uniquely identifies the same authorization.
-  update public.x402_native_payments
+  update public.x402_native_payments np
      set status = 'pending',
          error_reason = null,
          error_message = null,
          updated_at = now()
-   where payment_id = p_payment_id
-     and status = 'failed';
+   where np.payment_id = p_payment_id
+     and np.status = 'failed';
 
   get diagnostics v_reclaimed = row_count;
 
