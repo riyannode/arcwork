@@ -43,13 +43,13 @@ export default function HomeHero() {
         </span>
       </h1>
 
-      <div className="my-3 flex max-w-[460px] items-center gap-3">
-        <span className="h-px flex-1 bg-white/15" />
+      <div className="my-3 flex max-w-[460px] items-center gap-3" aria-hidden="true">
+        <span className="h-px flex-1 bg-transparent" />
         <span
-          className="h-[10px] w-[10px] rotate-45 border border-[#C5A67C]/60"
-          style={{ background: 'rgba(197, 166, 124, 0.14)' }}
+          className="h-[10px] w-[10px] rotate-45 border border-transparent"
+          style={{ background: 'transparent' }}
         />
-        <span className="h-px flex-1 bg-white/15" />
+        <span className="h-px flex-1 bg-transparent" />
       </div>
 
       <p className="aureo-body max-w-[510px] text-[14px] text-[rgba(234,228,216,0.82)] md:text-[14.5px]">

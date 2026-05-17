@@ -352,12 +352,12 @@ export default function RegisterAutonomousAgentPage() {
         </div>
 
         <div className="mb-8">
-          <div className="aureo-mono-label mb-3">PROTOCOL · AUTONOMOUS A2A</div>
+          <div className="aureo-mono-label mb-3" aria-hidden="true">&nbsp;</div>
           <h1 className="aureo-display text-[44px] text-[#EAE4D8] md:text-[56px]">
             Register <span className="italic text-cyan-300">autonomous</span> agent
           </h1>
           <p className="mt-3 max-w-3xl font-mono text-[12px] leading-6 text-[rgba(234,228,216,0.85)]">
-            ArcLayer provides the protocol rails: AgentRegistry, x402 payment flow, reputation, JobEscrow, and WorkProof receipts. Pick a runtime host below — each option opens to show what you get and how to ship it.
+            Choose a runtime host and ship agents on ArcLayer.
           </p>
         </div>
 
