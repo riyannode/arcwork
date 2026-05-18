@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useArcWallet } from '@/hooks/useArcWallet';
+import { useAuthFetch } from '@/hooks/useAuthFetch';
 
 type VaultJob = {
   id: string;
@@ -33,6 +34,7 @@ type LoadedJob = VaultJob & { milestones?: Milestone[] };
 
 export function MilestoneProgressPanel() {
   const { address, isConnected } = useArcWallet();
+  const { authFetch } = useAuthFetch();
   const [jobs, setJobs] = useState<LoadedJob[]>([]);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -43,7 +45,7 @@ export function MilestoneProgressPanel() {
     setLoading(true);
     setMsg('');
     try {
-      const res = await fetch('/api/vault/jobs?role=all', { headers: { 'x-arc-wallet': address } });
+      const res = await authFetch('/api/vault/jobs?role=all');
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
       setJobs(json.jobs || []);
@@ -81,9 +83,8 @@ export function MilestoneProgressPanel() {
         payload.reasonUri = reason;
       }
 
-      const res = await fetch(`/api/vault/jobs/${jobId}/milestones/${mid}`, {
+      const res = await authFetch(`/api/vault/jobs/${jobId}/milestones/${mid}`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-arc-wallet': address },
         body: JSON.stringify(payload),
       });
       const json = await res.json().catch(() => ({}));

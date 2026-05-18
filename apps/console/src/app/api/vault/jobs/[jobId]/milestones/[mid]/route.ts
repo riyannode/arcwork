@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/x402/supabaseClient';
 import { runAiResolver } from '@/lib/vault/ai-resolver';
+import { withWalletAuth } from '@/lib/auth/wallet-auth';
 
 type Action = 'submit' | 'approve' | 'reject' | 'dispute';
 
-export async function POST(
+export const POST = withWalletAuth<{ jobId: string; mid: string }>(async (
   req: NextRequest,
-  { params }: { params: Promise<{ jobId: string; mid: string }> }
-) {
-  const wallet = req.headers.get('x-arc-wallet')?.toLowerCase();
-  if (!wallet) return NextResponse.json({ error: 'missing wallet' }, { status: 401 });
-
-  const { jobId, mid } = await params;
+  { params, wallet }
+) => {
+  const { jobId, mid } = await (params as unknown as Promise<{ jobId: string; mid: string }>);
   const body = await req.json() as {
     action: Action;
     deliverableUri?: string;
@@ -107,7 +105,7 @@ export async function POST(
     }
   }
   return NextResponse.json({ error: 'unknown action' }, { status: 400 });
-}
+});
 
 async function escalateToResolver(
   supabase: ReturnType<typeof getSupabaseAdmin>,

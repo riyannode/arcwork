@@ -19,6 +19,7 @@ import { type Abi, type Address, parseUnits, keccak256, toHex, decodeEventLog } 
 import { readContract, getPublicClient, waitForTransactionReceipt } from '@wagmi/core';
 import { useArcWrite } from './useArcWrite';
 import { useArcWallet } from './useArcWallet';
+import { useAuthFetch } from './useAuthFetch';
 import { config } from '@/lib/wagmi';
 import { ARC_VAULT_ADDRESS, USDC_DECIMALS } from '@/lib/vault/constants';
 import { USDC_ADDRESS } from '@/lib/x402/constants';
@@ -58,6 +59,7 @@ export type VaultJobState = {
 export function useVaultJob() {
   const { address, isConnected } = useArcWallet();
   const { writeContractAsync, isPending } = useArcWrite();
+  const { authFetch } = useAuthFetch();
   const [state, setState] = useState<VaultJobState>({ step: 'idle', message: 'Ready.' });
 
   const createVaultJob = useCallback(async (input: CreateVaultJobInput) => {
@@ -158,9 +160,8 @@ export function useVaultJob() {
 
       // ── 6. Index in Supabase ──────────────────────────────────────
       setState((s) => ({ ...s, step: 'indexing', message: 'Indexing job…', txCreate, onChainJobId }));
-      const res = await fetch('/api/vault/jobs', {
+      const res = await authFetch('/api/vault/jobs', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-arc-wallet': owner },
         body: JSON.stringify({
           clientAddress: owner,
           jobberAddress: input.jobberAddress,
@@ -200,7 +201,7 @@ export function useVaultJob() {
       setState({ step: 'error', message: msg, errorReason: msg });
       throw err;
     }
-  }, [address, isConnected, writeContractAsync]);
+  }, [address, isConnected, writeContractAsync, authFetch]);
 
   const reset = useCallback(() => setState({ step: 'idle', message: 'Ready.' }), []);
 

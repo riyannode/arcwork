@@ -23,8 +23,8 @@ export const GATEWAY_WALLET_ABI = [
     stateMutability: 'view',
     name: 'deposits',
     inputs: [
-      { name: 'token', type: 'address' },
       { name: 'depositor', type: 'address' },
+      { name: 'token', type: 'address' },
     ],
     outputs: [{ name: '', type: 'uint256' }],
   },

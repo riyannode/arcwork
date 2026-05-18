@@ -28,6 +28,19 @@ contract ArcVault {
     uint256 public disputeWindow = 48 hours;
     uint256 public missGracePeriod = 24 hours;
 
+    // H4: Timelock for critical admin changes
+    uint256 public constant TIMELOCK_DELAY = 48 hours;
+
+    struct PendingChange {
+        bytes32 changeHash;
+        uint256 executeAfter;
+    }
+    PendingChange public pendingResolverChange;
+    PendingChange public pendingConfigChange;
+
+    event ResolverChangeQueued(address indexed newResolver, uint256 executeAfter);
+    event ConfigChangeQueued(bytes32 changeHash, uint256 executeAfter);
+
     uint256 public constant BPS = 10_000;
     uint256 public constant MAX_MILESTONES = 10;
     uint256 public constant MIN_MILESTONE_BPS = 1000; // 10%
@@ -85,6 +98,9 @@ contract ArcVault {
     // V1 balances: client → amount available to withdraw (un-allocated)
     mapping(address => uint256) public openPoolBalance;
 
+    // L4: Minimal reentrancy guard for token-transfering flows
+    uint256 private _locked = 1;
+
     // ─── Events ────────────────────────────────────────────────────────
     event Deposited(address indexed client, uint256 amount);
     event Withdrawn(address indexed client, uint256 amount);
@@ -110,6 +126,12 @@ contract ArcVault {
         require(msg.sender == resolver, "Vault: not resolver");
         _;
     }
+    modifier nonReentrant() {
+        require(_locked == 1, "Vault: reentrant");
+        _locked = 2;
+        _;
+        _locked = 1;
+    }
 
     constructor(address _usdc, address _bondConfig, address _resolver) {
         require(_usdc != address(0), "Vault: zero usdc");
@@ -124,7 +146,7 @@ contract ArcVault {
     // ═══════════════════════════════════════════════════════════════════
 
     /// @notice Deposit USDC into V1 (refundable until allocated to a job).
-    function deposit(uint256 amount) external {
+    function deposit(uint256 amount) external nonReentrant {
         require(amount > 0, "Vault: zero amount");
         require(usdc.transferFrom(msg.sender, address(this), amount), "Vault: transfer failed");
         openPoolBalance[msg.sender] += amount;
@@ -132,7 +154,7 @@ contract ArcVault {
     }
 
     /// @notice Instant withdraw from V1. Only un-allocated balance.
-    function withdraw(uint256 amount) external {
+    function withdraw(uint256 amount) external nonReentrant {
         require(openPoolBalance[msg.sender] >= amount, "Vault: insufficient");
         openPoolBalance[msg.sender] -= amount;
         require(usdc.transfer(msg.sender, amount), "Vault: transfer failed");
@@ -204,7 +226,7 @@ contract ArcVault {
     }
 
     /// @notice Cancel un-accepted job → refund to V1.
-    function cancelOpenJob(uint256 jobId) external {
+    function cancelOpenJob(uint256 jobId) external nonReentrant {
         Job storage j = jobs[jobId];
         require(j.client == msg.sender, "Vault: not client");
         require(j.status == JobStatus.OpenPool, "Vault: not open");
@@ -221,7 +243,7 @@ contract ArcVault {
     /// @notice Jobber accepts job → lock funds to V2, deposit performance bond.
     /// @param completedJobs jobber's completed count (read off-chain, oracle later)
     /// @param ratingX100    jobber's rating × 100
-    function acceptJob(uint256 jobId, uint256 completedJobs, uint256 ratingX100) external {
+    function acceptJob(uint256 jobId, uint256 completedJobs, uint256 ratingX100) external nonReentrant {
         Job storage j = jobs[jobId];
         require(j.status == JobStatus.OpenPool, "Vault: not open");
         require(j.client != msg.sender, "Vault: client cannot accept");
@@ -262,7 +284,7 @@ contract ArcVault {
     }
 
     /// @notice Client approves milestone → release to jobber.
-    function approveMilestone(uint256 jobId, uint256 mid) external {
+    function approveMilestone(uint256 jobId, uint256 mid) external nonReentrant {
         Job storage j = jobs[jobId];
         Milestone storage m = milestones[jobId][mid];
         require(j.client == msg.sender, "Vault: not client");
@@ -303,7 +325,7 @@ contract ArcVault {
     }
 
     /// @notice Anyone can call after disputeWindow expires → auto-release to jobber.
-    function autoReleaseMilestone(uint256 jobId, uint256 mid) external {
+    function autoReleaseMilestone(uint256 jobId, uint256 mid) external nonReentrant {
         Milestone storage m = milestones[jobId][mid];
         require(m.status == MilestoneStatus.Submitted, "Vault: not submitted");
         require(block.timestamp > m.approveDeadline, "Vault: window not expired");
@@ -312,7 +334,7 @@ contract ArcVault {
     }
 
     /// @notice Client claims refund if jobber misses milestone deadline + grace.
-    function reclaimMissedMilestone(uint256 jobId, uint256 mid) external {
+    function reclaimMissedMilestone(uint256 jobId, uint256 mid) external nonReentrant {
         Job storage j = jobs[jobId];
         Milestone storage m = milestones[jobId][mid];
         require(j.client == msg.sender, "Vault: not client");
@@ -374,7 +396,7 @@ contract ArcVault {
         DisputeOutcome outcome,
         uint16 jobberBps,
         uint16 clientBps
-    ) external onlyResolver {
+    ) external onlyResolver nonReentrant {
         Job storage j = jobs[jobId];
         Milestone storage m = milestones[jobId][mid];
         Dispute storage d = disputes[jobId][mid];
@@ -385,20 +407,16 @@ contract ArcVault {
         uint256 arbiterFee = (amount * arbiterFeeBps) / BPS;
 
         if (outcome == DisputeOutcome.Release) {
-            // Jobber wins: client pays arbiter fee from bond? No — from jobber payout (loser pays).
-            // Loser = client. Take fee from refund pool? In release case, no refund.
-            // Loser-pays semantics: deduct fee from the LOSING side's expected outcome.
-            // Client lost → would have gotten refund, gets nothing. Fee from jobber payout instead? No.
-            // Implementation: arbiter fee always taken from milestone amount, deducted from winning side
-            // and recorded as protocol revenue (owner gets it). Simpler.
+            // H3 fix: Jobber wins dispute. Arbiter fee (loser-pays) comes from milestone amount.
+            // Platform fee is NOT charged again here — it was already accounted for in normal release flow.
+            // Only arbiter fee is deducted as the dispute resolution cost (paid by losing client).
             uint256 payout = amount - arbiterFee;
-            uint256 platformFee = (amount * platformFeeBps) / BPS;
-            payout -= platformFee;
 
             require(usdc.transfer(j.jobber, payout), "Vault: payout fail");
-            require(usdc.transfer(owner, arbiterFee + platformFee), "Vault: fee fail");
+            require(usdc.transfer(owner, arbiterFee), "Vault: fee fail");
 
-            j.releasedToJobber += amount;
+            // H2 fix (consistent): track net payout, not gross
+            j.releasedToJobber += payout;
             m.status = MilestoneStatus.Released;
         } else if (outcome == DisputeOutcome.Refund) {
             // Client wins → full milestone + slash jobber bond
@@ -453,7 +471,8 @@ contract ArcVault {
         uint256 payout = m.amount - fee;
 
         m.status = MilestoneStatus.Released;
-        j.releasedToJobber += m.amount;
+        // H2 fix: track NET amount sent to jobber, not gross (fee was being double-counted).
+        j.releasedToJobber += payout;
 
         require(usdc.transfer(j.jobber, payout), "Vault: payout fail");
         if (fee > 0) require(usdc.transfer(owner, fee), "Vault: fee fail");
@@ -489,16 +508,42 @@ contract ArcVault {
     //                          ADMIN
     // ═══════════════════════════════════════════════════════════════════
 
-    function setResolver(address _resolver) external onlyOwner {
+    // ─── H4: Resolver change with timelock ──────────────────────────────
+    // Two-step: queue → wait TIMELOCK_DELAY → execute. Prevents instant
+    // unilateral takeover of dispute resolution authority.
+
+    function queueResolverChange(address _resolver) external onlyOwner {
+        require(_resolver != address(0), "Vault: zero resolver");
+        pendingResolverChange = PendingChange({
+            changeHash: keccak256(abi.encode(_resolver)),
+            executeAfter: block.timestamp + TIMELOCK_DELAY
+        });
+        emit ResolverChangeQueued(_resolver, pendingResolverChange.executeAfter);
+    }
+
+    function executeResolverChange(address _resolver) external onlyOwner {
+        require(pendingResolverChange.executeAfter != 0, "Vault: no pending");
+        require(block.timestamp >= pendingResolverChange.executeAfter, "Vault: timelock not elapsed");
+        require(
+            pendingResolverChange.changeHash == keccak256(abi.encode(_resolver)),
+            "Vault: hash mismatch"
+        );
+        delete pendingResolverChange;
         resolver = _resolver;
         emit ResolverUpdated(_resolver);
+    }
+
+    function cancelResolverChange() external onlyOwner {
+        delete pendingResolverChange;
     }
 
     function setBondConfig(address _bondConfig) external onlyOwner {
         bondConfig = IBondConfig(_bondConfig);
     }
 
-    function setConfig(
+    // ─── H4: Config change with timelock ────────────────────────────────
+
+    function queueConfigChange(
         uint256 _platformFeeBps,
         uint256 _arbiterFeeBps,
         uint256 _disputeWindow,
@@ -508,11 +553,36 @@ contract ArcVault {
         require(_arbiterFeeBps <= 2000, "Vault: max 20% arbiter");
         require(_disputeWindow >= 1 hours && _disputeWindow <= 14 days, "Vault: bad window");
         require(_missGrace <= 7 days, "Vault: bad grace");
+
+        bytes32 h = keccak256(abi.encode(_platformFeeBps, _arbiterFeeBps, _disputeWindow, _missGrace));
+        pendingConfigChange = PendingChange({
+            changeHash: h,
+            executeAfter: block.timestamp + TIMELOCK_DELAY
+        });
+        emit ConfigChangeQueued(h, pendingConfigChange.executeAfter);
+    }
+
+    function executeConfigChange(
+        uint256 _platformFeeBps,
+        uint256 _arbiterFeeBps,
+        uint256 _disputeWindow,
+        uint256 _missGrace
+    ) external onlyOwner {
+        require(pendingConfigChange.executeAfter != 0, "Vault: no pending");
+        require(block.timestamp >= pendingConfigChange.executeAfter, "Vault: timelock not elapsed");
+        bytes32 h = keccak256(abi.encode(_platformFeeBps, _arbiterFeeBps, _disputeWindow, _missGrace));
+        require(pendingConfigChange.changeHash == h, "Vault: hash mismatch");
+        delete pendingConfigChange;
+
         platformFeeBps = _platformFeeBps;
         arbiterFeeBps = _arbiterFeeBps;
         disputeWindow = _disputeWindow;
         missGracePeriod = _missGrace;
         emit ConfigUpdated(_platformFeeBps, _arbiterFeeBps, _disputeWindow, _missGrace);
+    }
+
+    function cancelConfigChange() external onlyOwner {
+        delete pendingConfigChange;
     }
 
     function transferOwnership(address newOwner) external onlyOwner {

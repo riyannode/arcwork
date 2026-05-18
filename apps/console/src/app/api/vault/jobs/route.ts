@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/x402/supabaseClient';
+import { withWalletAuth } from '@/lib/auth/wallet-auth';
 
 // GET /api/vault/jobs — list jobs for connected wallet
 // POST /api/vault/jobs — create a new job (V1 deposit)
-export async function GET(req: NextRequest) {
-  const wallet = req.headers.get('x-arc-wallet')?.toLowerCase();
-  if (!wallet) return NextResponse.json({ error: 'missing wallet' }, { status: 401 });
-
+export const GET = withWalletAuth(async (req: NextRequest, { wallet }) => {
   const role = req.nextUrl.searchParams.get('role') || 'client'; // client | jobber | all
   const status = req.nextUrl.searchParams.get('status'); // optional filter
 
@@ -48,12 +46,9 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ jobs: data });
-}
+});
 
-export async function POST(req: NextRequest) {
-  const wallet = req.headers.get('x-arc-wallet')?.toLowerCase();
-  if (!wallet) return NextResponse.json({ error: 'missing wallet' }, { status: 401 });
-
+export const POST = withWalletAuth(async (req: NextRequest, { wallet }) => {
   const body = await req.json() as {
     clientAddress?: string;
     jobberAddress?: string;
@@ -93,13 +88,28 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // M4: spec_hash verification — if client supplied a hash, recompute and compare
+  if (body.specHash && body.specJson) {
+    const canonical = JSON.stringify(body.specJson);
+    const data = new TextEncoder().encode(canonical);
+    const hashBuf = await crypto.subtle.digest('SHA-256', data);
+    const computed = '0x' + Array.from(new Uint8Array(hashBuf))
+      .map((b) => b.toString(16).padStart(2, '0')).join('');
+    if (computed.toLowerCase() !== body.specHash.toLowerCase()) {
+      return NextResponse.json(
+        { error: 'spec_hash mismatch (computed vs supplied)' },
+        { status: 400 },
+      );
+    }
+  }
+
   // Determine duration tier
   let durationTier = body.durationTier || 'single_payout';
   if (body.milestones.length > 1) durationTier = 'milestone';
 
   const supabase = getSupabaseAdmin();
 
-  // Insert job
+  // Insert job — client_address is FORCED to authenticated wallet (cannot spoof)
   const { data: job, error: jobErr } = await supabase.from('vault_jobs').insert({
     client_address: wallet,
     jobber_address: body.jobberAddress?.toLowerCase() || null,
@@ -133,4 +143,4 @@ export async function POST(req: NextRequest) {
   if (msErr) return NextResponse.json({ error: msErr.message }, { status: 500 });
 
   return NextResponse.json({ jobId: job.id, job, milestones: milestoneRows }, { status: 201 });
-}
+});

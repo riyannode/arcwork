@@ -87,8 +87,20 @@ contract BondConfig {
         return (jobAmount * last.percentBps) / 10000;
     }
 
-    // ─── Admin: Update Tiers ───────────────────────────────────────────
-    function updateTier(
+    // M3: Timelock for tier changes — prevents instant bond manipulation
+    uint256 public constant TIER_TIMELOCK = 24 hours;
+
+    struct PendingTierChange {
+        bytes32 changeHash;
+        uint256 executeAfter;
+    }
+    PendingTierChange public pendingTierChange;
+
+    event TierChangeQueued(bytes32 changeHash, uint256 executeAfter);
+    event TierChangeCancelled();
+
+    // ─── Admin: Update Tiers (timelocked) ────────────────────────────────
+    function queueUpdateTier(
         uint256 index,
         uint256 minAmount,
         uint256 maxAmount,
@@ -98,11 +110,29 @@ contract BondConfig {
     ) external onlyOwner {
         require(index < tiers.length, "BondConfig: invalid index");
         require(percentBps <= 1000, "BondConfig: max 10%");
+        bytes32 h = keccak256(abi.encode("update", index, minAmount, maxAmount, isFlat, flatBond, percentBps));
+        pendingTierChange = PendingTierChange({ changeHash: h, executeAfter: block.timestamp + TIER_TIMELOCK });
+        emit TierChangeQueued(h, pendingTierChange.executeAfter);
+    }
+
+    function executeUpdateTier(
+        uint256 index,
+        uint256 minAmount,
+        uint256 maxAmount,
+        bool isFlat,
+        uint256 flatBond,
+        uint256 percentBps
+    ) external onlyOwner {
+        require(pendingTierChange.executeAfter != 0, "BondConfig: no pending");
+        require(block.timestamp >= pendingTierChange.executeAfter, "BondConfig: timelock active");
+        bytes32 h = keccak256(abi.encode("update", index, minAmount, maxAmount, isFlat, flatBond, percentBps));
+        require(pendingTierChange.changeHash == h, "BondConfig: hash mismatch");
+        delete pendingTierChange;
         tiers[index] = Tier(minAmount, maxAmount, isFlat, flatBond, percentBps);
         emit TierUpdated(index);
     }
 
-    function addTier(
+    function queueAddTier(
         uint256 minAmount,
         uint256 maxAmount,
         bool isFlat,
@@ -110,8 +140,30 @@ contract BondConfig {
         uint256 percentBps
     ) external onlyOwner {
         require(percentBps <= 1000, "BondConfig: max 10%");
+        bytes32 h = keccak256(abi.encode("add", minAmount, maxAmount, isFlat, flatBond, percentBps));
+        pendingTierChange = PendingTierChange({ changeHash: h, executeAfter: block.timestamp + TIER_TIMELOCK });
+        emit TierChangeQueued(h, pendingTierChange.executeAfter);
+    }
+
+    function executeAddTier(
+        uint256 minAmount,
+        uint256 maxAmount,
+        bool isFlat,
+        uint256 flatBond,
+        uint256 percentBps
+    ) external onlyOwner {
+        require(pendingTierChange.executeAfter != 0, "BondConfig: no pending");
+        require(block.timestamp >= pendingTierChange.executeAfter, "BondConfig: timelock active");
+        bytes32 h = keccak256(abi.encode("add", minAmount, maxAmount, isFlat, flatBond, percentBps));
+        require(pendingTierChange.changeHash == h, "BondConfig: hash mismatch");
+        delete pendingTierChange;
         tiers.push(Tier(minAmount, maxAmount, isFlat, flatBond, percentBps));
         emit TierAdded(tiers.length - 1, minAmount, maxAmount);
+    }
+
+    function cancelTierChange() external onlyOwner {
+        delete pendingTierChange;
+        emit TierChangeCancelled();
     }
 
     function resetTiers() external onlyOwner {

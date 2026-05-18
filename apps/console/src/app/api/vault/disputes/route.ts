@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/x402/supabaseClient';
+import { withWalletAuth } from '@/lib/auth/wallet-auth';
 
-// GET /api/vault/disputes — list disputes for the connected wallet
+// GET /api/vault/disputes — list disputes for the authenticated wallet
 // Query: ?role=client|jobber|all  (default all)
-export async function GET(req: NextRequest) {
-  const wallet = req.headers.get('x-arc-wallet')?.toLowerCase();
-  if (!wallet) return NextResponse.json({ error: 'missing wallet' }, { status: 401 });
-
+export const GET = withWalletAuth(async (req: NextRequest, { wallet }) => {
   const role = req.nextUrl.searchParams.get('role') || 'all';
   const supabase = getSupabaseAdmin();
 
@@ -45,4 +43,4 @@ export async function GET(req: NextRequest) {
   }));
 
   return NextResponse.json({ disputes: enriched });
-}
+});
