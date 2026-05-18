@@ -72,18 +72,8 @@ export default function X402DemoPanel({ compact = false, ticketOnly = false }: X
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [gatewayProbe, setGatewayProbe] = useState<GatewayProbe | null>(null);
   const [gatewayBalance, setGatewayBalance] = useState<GatewayBalance | null>(null);
-  const [copiedDeposit, setCopiedDeposit] = useState(false);
-
-  const GATEWAY_WALLET_ADDR = getAddress('0x0077777d7EBA4688BDeF3E311b846F25870A19B9');
-  const copyDepositAddress = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(GATEWAY_WALLET_ADDR);
-      setCopiedDeposit(true);
-      setTimeout(() => setCopiedDeposit(false), 1500);
-    } catch {
-      // clipboard might be unavailable
-    }
-  }, [GATEWAY_WALLET_ADDR]);
+  const [walletUsdcBalance, setWalletUsdcBalance] = useState<string | null>(null);
+  const [copiedWallet, setCopiedWallet] = useState(false);
 
   const walletMode: WalletMode = eoaConnected ? 'eoa' : authenticated ? 'passkey' : null;
   const activeAddress = useMemo(() => {
@@ -123,18 +113,23 @@ export default function X402DemoPanel({ compact = false, ticketOnly = false }: X
   }, [address]);
 
   useEffect(() => {
-    if (!gatewayBalance || eoaConnected) return;
-    const deposited = gatewayBalance.depositedUsdc;
-    if (authenticated && deposited && Number(deposited) >= 0.05) setMode('circle-gateway');
-  }, [gatewayBalance, authenticated, eoaConnected]);
+    if (!address) { setWalletUsdcBalance(null); return; }
+    const client = createPublicClient({ transport: http(ARC_RPC) });
+    client.readContract({ address: USDC, abi: BALANCE_ABI, functionName: 'balanceOf', args: [address as `0x${string}`] })
+      .then((balance) => setWalletUsdcBalance(formatUnits(balance, 6)))
+      .catch(() => setWalletUsdcBalance(null));
+  }, [address]);
 
-  useEffect(() => {
-    if (eoaConnected && mode === 'circle-gateway') setMode('arc-native');
-  }, [eoaConnected, mode]);
-
-  useEffect(() => {
-    if (authenticated && !eoaConnected && mode === 'arc-native') setMode('circle-gateway');
-  }, [authenticated, eoaConnected, mode]);
+  const copyWalletAddress = useCallback(async () => {
+    if (!address) return;
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopiedWallet(true);
+      setTimeout(() => setCopiedWallet(false), 1500);
+    } catch {
+      // clipboard might be unavailable
+    }
+  }, [address]);
 
 
   const sessionKey = useCallback((walletAddress: string) => `x402_paid:${mode}:/api/x402-demo/protected:${walletAddress.toLowerCase()}`, [mode]);
@@ -504,10 +499,10 @@ export default function X402DemoPanel({ compact = false, ticketOnly = false }: X
     }
   }, [step]);
   const payTo = requirement?.payTo || relayer?.relayerAddress || FALLBACK_PAY_TO;
-  const arcDisabledForPasskey = walletMode === 'passkey';
-  const circleDisabledForEoa = walletMode === 'eoa';
+  const arcDisabledForPasskey = false;
+  const circleDisabledForEoa = false;
   const gatewayDepositUsdc = gatewayBalance?.depositedUsdc ? Number(gatewayBalance.depositedUsdc) : 0;
-  const gatewayDepositInsufficient = mode === 'circle-gateway' && walletMode === 'passkey' && gatewayDepositUsdc < 0.05;
+  const gatewayDepositInsufficient = mode === 'circle-gateway' && gatewayDepositUsdc < 0.05;
   const connectLabel = mode === 'circle-gateway' ? 'CONNECT CIRCLE PASSKEY' : 'CONNECT WALLET';
 
   // Compact-aware sizing tokens
@@ -651,22 +646,44 @@ export default function X402DemoPanel({ compact = false, ticketOnly = false }: X
               <div className={`${c.cardRadiusXs} bg-black/25 ${c.cardPadXs}`}><div className="text-white/80">Your deposit</div><div className={gatewayBalance?.depositedUsdc && Number(gatewayBalance.depositedUsdc) > 0 ? 'text-green-300' : 'text-yellow-300'}>{gatewayBalance?.depositedUsdc ?? '0'} USDC</div></div>
               <div className={`${c.cardRadiusXs} bg-black/25 ${c.cardPadXs}`}><div className="text-white/80">Best for</div><div className="text-white/70">HFT agents</div></div>
             </div>
-            {walletMode === 'passkey' && (
+            {mode === 'circle-gateway' && activeAuthed && (
               <div className={`mt-3 ${c.cardRadiusXs} border border-[#7CB5C5]/25 bg-[#7CB5C5]/[0.06] ${c.cardPadXs} font-mono ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
-                <div className="mb-1 text-[#7CB5C5]">Deposit USDC to GatewayWallet</div>
-                <div className="flex items-center gap-2">
-                  <code className="min-w-0 flex-1 truncate text-white/80">{GATEWAY_WALLET_ADDR}</code>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      copyDepositAddress();
-                    }}
-                    className="shrink-0 rounded border border-[#7CB5C5]/35 px-2 py-1 text-[#7CB5C5] hover:bg-[#7CB5C5]/10"
-                  >
-                    {copiedDeposit ? 'COPIED' : 'COPY'}
-                  </button>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[#7CB5C5]">Gateway Balance</span>
+                  <span className={gatewayDepositUsdc > 0 ? 'text-green-300' : 'text-yellow-300'}>{gatewayBalance?.depositedUsdc ?? '0'} USDC</span>
                 </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/60">Wallet USDC</span>
+                  <span className="text-white/80">{walletUsdcBalance ?? '...'} USDC</span>
+                </div>
+                {gatewayDepositUsdc < 0.05 && (
+                  <div className="mt-2 space-y-1.5">
+                    <div className="text-yellow-200/80">⚠ Deposit required before using Gateway payments.</div>
+                    <div className="text-white/50">Do not manually send USDC to GatewayWallet contract.</div>
+                    <button
+                      type="button"
+                      disabled
+                      className="mt-1.5 w-full cursor-not-allowed rounded border border-[#7CB5C5]/20 bg-[#7CB5C5]/10 py-1.5 text-[#7CB5C5]/50"
+                    >
+                      DEPOSIT 1 USDC (coming soon)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setMode('arc-native'); }}
+                      className="w-full cursor-pointer rounded border border-white/15 py-1.5 text-white/70 hover:bg-white/5"
+                    >
+                      Use Arc Native instead
+                    </button>
+                  </div>
+                )}
+                {gatewayDepositUsdc >= 0.05 && (
+                  <div className="mt-2 text-green-300/80">✓ Ready for batched x402 payments</div>
+                )}
+              </div>
+            )}
+            {mode === 'circle-gateway' && !activeAuthed && (
+              <div className={`mt-3 ${c.cardRadiusXs} border border-[#7CB5C5]/25 bg-[#7CB5C5]/[0.06] ${c.cardPadXs} font-mono ${compact ? 'text-[10px]' : 'text-[11px]'} text-white/60`}>
+                Connect wallet to check Gateway balance.
               </div>
             )}
           </button>
@@ -722,9 +739,9 @@ export default function X402DemoPanel({ compact = false, ticketOnly = false }: X
             <div className="flex justify-between gap-4"><span className="text-white/80">Replay guard</span><span className={replayResult.startsWith('Rejected') ? 'text-red-300' : replayResult.startsWith('Unexpected') ? 'text-green-300' : 'text-white/80'}>{replayResult}</span></div>
           </div>
 
-          {mode === 'circle-gateway' && (!gatewayBalance?.depositedUsdc || Number(gatewayBalance.depositedUsdc) <= 0) && (
+          {mode === 'circle-gateway' && activeAuthed && (!gatewayBalance?.depositedUsdc || Number(gatewayBalance.depositedUsdc) <= 0) && (
             <div className={`mt-3 ${c.cardRadiusXs} border border-yellow-400/20 bg-yellow-400/10 p-2.5 font-mono leading-5 text-yellow-100/80 ${compact ? 'text-[10.5px]' : 'text-[11px]'}`}>
-              Gateway balance is empty for this Circle wallet. Deposit USDC into GatewayWallet first, or connect an EOA for Arc Native no-deposit execution.
+              Gateway balance is 0 for this wallet. Real Gateway deposit flow is not yet wired in — use Arc Native for direct on-chain x402 payment, or wait for the deposit SDK integration.
             </div>
           )}
 

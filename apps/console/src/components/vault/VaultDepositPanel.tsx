@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useArcWallet } from '@/hooks/useArcWallet';
+import { useVaultJob, type VaultJobStep } from '@/hooks/useVaultJob';
+import type { Address } from 'viem';
 
 type Milestone = {
   description: string;
@@ -14,15 +16,11 @@ const MIN_MILESTONE_BPS = 1000; // 10%
 
 export function VaultDepositPanel() {
   const { address, isConnected } = useArcWallet();
+  const { state, createVaultJob, reset } = useVaultJob();
   const [jobberAddr, setJobberAddr] = useState('');
   const [specJson, setSpecJson] = useState('');
   const [durationTier, setDurationTier] = useState<DurationTier>('single_payout');
   const [milestones, setMilestones] = useState<Milestone[]>([{ description: '', amount: '' }]);
-  const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<{ tone: 'idle' | 'pending' | 'success' | 'error'; msg: string }>({
-    tone: 'idle',
-    msg: 'Configure milestones and deposit USDC into Vault.',
-  });
 
   const totalAmount = milestones.reduce((sum, m) => {
     const n = Number(m.amount);
@@ -46,85 +44,69 @@ export function VaultDepositPanel() {
   }
 
   async function handleCreate() {
-    if (!isConnected || !address) {
-      setStatus({ tone: 'error', msg: 'Connect wallet first.' });
-      return;
-    }
-    if (!/^0x[a-fA-F0-9]{40}$/.test(jobberAddr)) {
-      setStatus({ tone: 'error', msg: 'Jobber address invalid.' });
-      return;
-    }
-    if (!specJson.trim()) {
-      setStatus({ tone: 'error', msg: 'Spec / task description required.' });
-      return;
-    }
-    if (totalAmount <= 0) {
-      setStatus({ tone: 'error', msg: 'Total amount must be > 0.' });
-      return;
-    }
+    if (!isConnected || !address) return;
+    if (!/^0x[a-fA-F0-9]{40}$/.test(jobberAddr)) return;
+    if (!specJson.trim()) return;
+    if (totalAmount <= 0) return;
 
     // Validate min 10% per milestone for milestone-tier jobs
     if (durationTier === 'milestone') {
       const minPerMs = totalAmount * (MIN_MILESTONE_BPS / 10000);
       for (const m of milestones) {
-        if (Number(m.amount) < minPerMs) {
-          setStatus({ tone: 'error', msg: `Each milestone must be ≥ 10% of total ($${minPerMs.toFixed(2)}).` });
-          return;
-        }
+        if (Number(m.amount) < minPerMs) return;
       }
     }
 
     try {
-      setBusy(true);
-      setStatus({ tone: 'pending', msg: 'Creating vault job...' });
-
-      const res = await fetch('/api/vault/jobs', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-arc-wallet': address,
-        },
-        body: JSON.stringify({
-          clientAddress: address,
-          jobberAddress: jobberAddr,
-          totalAmount: totalAmount.toString(),
-          durationTier,
-          specJson: { description: specJson },
-          milestones: milestones.map((m, i) => ({
-            index: i,
-            description: m.description,
-            amount: m.amount,
-          })),
-        }),
+      await createVaultJob({
+        jobberAddress: jobberAddr as Address,
+        totalAmount: totalAmount.toString(),
+        milestones: milestones.map((m) => ({
+          amount: m.amount,
+          description: m.description,
+        })),
+        specJson: { description: specJson },
       });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-
-      const json = await res.json();
-      setStatus({
-        tone: 'success',
-        msg: `Vault job ${json.jobId?.slice(0, 8) ?? 'created'}. Bond required: $${bondPreview.bondAmount.toFixed(2)}. Approve USDC + deposit on-chain to fund Vault 1.`,
-      });
-    } catch (e) {
-      setStatus({ tone: 'error', msg: e instanceof Error ? e.message : 'Failed.' });
-    } finally {
-      setBusy(false);
+    } catch {
+      // error already in state
     }
   }
 
+  const stepLabels: Record<VaultJobStep, string> = {
+    idle: 'Configure milestones and deposit USDC into Vault.',
+    allowance: 'Checking USDC allowance…',
+    approving: 'Approve USDC spend in wallet…',
+    depositing: 'Depositing USDC to Vault 1 (Open Pool)…',
+    creating: 'Creating job on-chain (allocating V1 → job)…',
+    indexing: 'Indexing job in database…',
+    done: state.message,
+    error: state.message,
+  };
+
+  const stepTone: Record<VaultJobStep, 'idle' | 'pending' | 'success' | 'error'> = {
+    idle: 'idle',
+    allowance: 'pending',
+    approving: 'pending',
+    depositing: 'pending',
+    creating: 'pending',
+    indexing: 'pending',
+    done: 'success',
+    error: 'error',
+  };
+
+  const tone = stepTone[state.step];
   const toneClass = {
     idle: 'border-white/10 bg-black/20 text-[rgba(234,228,216,0.82)]',
     pending: 'border-amber-400/30 bg-amber-400/5 text-amber-200',
     success: 'border-[#B8CD7E]/35 bg-[#B8CD7E]/8 text-[#B8CD7E]',
     error: 'border-red-400/35 bg-red-400/6 text-red-200',
-  }[status.tone];
+  }[tone];
+
+  const busy = !['idle', 'done', 'error'].includes(state.step);
 
   return (
     <div className="aureo-panel p-4 md:p-6">
-      <div className="aureo-mono-label mb-2">VAULT · ADVANCED ESCROW</div>
+      <div className="aureo-mono-label mb-2">VAULT · ON-CHAIN ESCROW</div>
       <h2 className="aureo-display text-[28px] text-[#EAE4D8]">
         Multi-milestone <span className="italic text-[#C5A67C]">vault deposit</span>
       </h2>
@@ -268,18 +250,51 @@ export function VaultDepositPanel() {
         </div>
       </div>
 
+      {/* Progress steps indicator */}
+      {busy && (
+        <div className="mt-4 flex items-center gap-2">
+          {(['allowance', 'approving', 'depositing', 'creating', 'indexing'] as VaultJobStep[]).map((s, i) => (
+            <div key={s} className="flex items-center gap-1">
+              <div className={`h-2 w-2 rounded-full ${
+                state.step === s ? 'animate-pulse bg-amber-400' :
+                (['allowance', 'approving', 'depositing', 'creating', 'indexing'].indexOf(state.step) > i ? 'bg-[#B8CD7E]' : 'bg-white/20')
+              }`} />
+              <span className="font-mono text-[8px] uppercase text-[rgba(234,228,216,0.5)]">
+                {s === 'allowance' ? 'CHK' : s === 'approving' ? 'APR' : s === 'depositing' ? 'DEP' : s === 'creating' ? 'JOB' : 'IDX'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tx hashes */}
+      {(state.txApprove || state.txDeposit || state.txCreate) && (
+        <div className="mt-3 space-y-1 font-mono text-[9.5px] text-[rgba(234,228,216,0.6)]">
+          {state.txApprove && <div>Approve: <span className="text-[#C5A67C]">{state.txApprove.slice(0, 10)}…{state.txApprove.slice(-6)}</span></div>}
+          {state.txDeposit && <div>Deposit: <span className="text-[#C5A67C]">{state.txDeposit.slice(0, 10)}…{state.txDeposit.slice(-6)}</span></div>}
+          {state.txCreate && <div>Create: <span className="text-[#C5A67C]">{state.txCreate.slice(0, 10)}…{state.txCreate.slice(-6)}</span></div>}
+        </div>
+      )}
+
       {/* Status */}
       <div className={`mt-4 rounded-none border px-4 py-3 font-mono text-[11px] ${toneClass}`}>
-        {status.msg}
+        {stepLabels[state.step]}
       </div>
 
-      <button
-        onClick={handleCreate}
-        disabled={!isConnected || busy}
-        className="btn-primary mt-5"
-      >
-        {busy ? 'CREATING…' : 'CREATE VAULT JOB'}
-      </button>
+      <div className="mt-5 flex gap-3">
+        <button
+          onClick={handleCreate}
+          disabled={!isConnected || busy}
+          className="btn-primary flex-1"
+        >
+          {busy ? 'PROCESSING…' : state.step === 'done' ? 'CREATE ANOTHER' : 'DEPOSIT & CREATE VAULT JOB'}
+        </button>
+        {state.step === 'error' && (
+          <button onClick={reset} className="btn-secondary px-4">
+            RETRY
+          </button>
+        )}
+      </div>
     </div>
   );
 }

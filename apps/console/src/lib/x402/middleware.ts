@@ -339,7 +339,33 @@ async function handleNative(
     );
   }
 
-  // Settle on-chain via relayer
+  // ─── VERIFY-FIRST PATTERN: Execute handler BEFORE settlement ──────────────
+  // Rationale: If handler fails (DB error, timeout, panic), user should NOT be
+  // charged. Settlement is irreversible on-chain. Handler success is the gate.
+  //
+  // Order: verify (done above) → session claim (done) → handler → settle → consume
+  // If settle fails after handler success → release session + 502 (user retries)
+
+  let response: NextResponse;
+  try {
+    response = await handler(req);
+  } catch (handlerErr) {
+    // Handler threw — release session, do NOT settle
+    await releaseAccessSession(payer, opts.resource, 'arc-native');
+    const msg = handlerErr instanceof Error ? handlerErr.message : 'Handler execution failed';
+    return NextResponse.json(
+      { ok: false, error: 'handler_failed', message: msg },
+      { status: 500, headers: { 'X-402-Version': String(X402_VERSION_V2) } },
+    );
+  }
+
+  // Handler succeeded — check response status (non-2xx = logical failure)
+  if (response.status >= 400) {
+    await releaseAccessSession(payer, opts.resource, 'arc-native');
+    return response; // Pass through handler's error response without settling
+  }
+
+  // ─── Settle on-chain via relayer (only after handler success) ──────────────
   const settleResult = await settleExactPayment({
     paymentPayload: proof as unknown as PaymentPayload,
     paymentRequirements: requirements,
@@ -352,12 +378,12 @@ async function handleNative(
       await releaseAccessSession(payer, opts.resource, 'arc-native');
       return NextResponse.json(
         { ok: false, error: 'settlement_failed', reason: settleResult.errorReason, message: settleResult.errorMessage },
-        { status: 402, headers: { 'X-402-Version': String(X402_VERSION_V2) } },
+        { status: 502, headers: { 'X-402-Version': String(X402_VERSION_V2) } },
       );
     }
   }
 
-  // Derive paymentId and consume (replay protection)
+  // ─── Derive paymentId and consume (replay protection) ─────────────────────
   const paymentId = deriveNativePaymentId({
     network: requirements.network,
     asset: requirements.asset,
@@ -381,9 +407,6 @@ async function handleNative(
       { status: 502, headers: { 'X-402-Version': String(X402_VERSION_V2) } },
     );
   }
-
-  // Execute handler
-  const response = await handler(req);
 
   // Complete access session with payment details
   await completeAccessSession(payer, opts.resource, 'arc-native', paymentId, settleResult.transaction ?? undefined);

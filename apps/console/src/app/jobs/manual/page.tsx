@@ -19,6 +19,8 @@ import { fetchIndexerJson, type IndexedAgent, type IndexedJob, waitForIndexer } 
 import { config } from '@/lib/wagmi';
 import { displayAgentLabel, formatSkillLabel, parseAgentSkill, shortAgentId } from '@/lib/agentName';
 import { VaultDepositPanel } from '@/components/vault/VaultDepositPanel';
+import { MilestoneProgressPanel } from '@/components/vault/MilestoneProgressPanel';
+import { DisputeViewer } from '@/components/vault/DisputeViewer';
 
 const JOB_STATUS = ['Created', 'Budgeted', 'Funded', 'Submitted', 'Evaluated', 'Settled', 'Cancelled'] as const;
 const JOB_TONE: Record<number, string> = { 0: '', 1: 'pending', 2: 'pending', 3: 'pending', 4: 'pending', 5: 'success', 6: 'error' };
@@ -774,6 +776,10 @@ function JobsPage() {
             </div>
 
             <VaultDepositPanel />
+
+            <MilestoneProgressPanel />
+
+            <DisputeViewer />
 
             <div className="rounded-none border border-[rgba(255,255,255,0.08)] bg-[rgba(10,10,10,0.6)] p-5 font-mono text-[11px] leading-5 text-[rgba(234,228,216,0.82)]">
               {isConnected
