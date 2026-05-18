@@ -5,6 +5,8 @@ import { useCircleWallet } from '@/hooks/useCircleWallet';
 import { useAccount, useDisconnect } from 'wagmi';
 import { useAppKit } from '@reown/appkit/react';
 import { createPublicClient, formatUnits, getAddress, http, type Hex } from 'viem';
+import { useGatewayDeposit } from '@/hooks/useGatewayDeposit';
+import { DEFAULT_GATEWAY_DEPOSIT_USDC } from '@/lib/x402/constants';
 import { DevDetails } from '@/components/DevDetails';
 import { NOTICE_INSUFFICIENT_USDC, NOTICE_PAYMENT_REQUIRED, NOTICE_PAYMENT_SETTLED, NOTICE_REPLAY_FAILED, NOTICE_REPLAY_REJECTED, NOTICE_RESOURCE_UNLOCKED, NOTICE_WALLET_NOT_CONNECTED, NOTICE_WRONG_CHAIN, useProtectionNotice } from '@/components/protection';
 import { shortenAddress } from '@/lib/contracts';
@@ -84,6 +86,31 @@ export default function X402DemoPanel({ compact = false, ticketOnly = false }: X
   const address = activeAddress || '';
 
   const log = useCallback((msg: string, type: LogType = 'info') => setLogs((prev) => [...prev, { ts: nowTs(), msg, type }]), []);
+
+  // Refresh both gateway balance + wallet USDC after a successful deposit.
+  const refreshGatewayBalance = useCallback(() => {
+    if (!address) return;
+    fetch(`/api/x402/gateway-balance?address=${address}`)
+      .then((r) => r.json())
+      .then((data: GatewayBalance) => setGatewayBalance(data))
+      .catch(() => undefined);
+    const client = createPublicClient({ transport: http(ARC_RPC) });
+    client.readContract({ address: USDC, abi: BALANCE_ABI, functionName: 'balanceOf', args: [address as `0x${string}`] })
+      .then((balance) => setWalletUsdcBalance(formatUnits(balance, 6)))
+      .catch(() => undefined);
+  }, [address]);
+
+  const gatewayDeposit = useGatewayDeposit(() => {
+    log(`Gateway deposit confirmed`, 'success');
+    refreshGatewayBalance();
+  });
+
+  const onClickDeposit = useCallback(async () => {
+    if (gatewayDeposit.step !== 'idle' && gatewayDeposit.step !== 'success' && gatewayDeposit.step !== 'error') return;
+    log(`Depositing ${DEFAULT_GATEWAY_DEPOSIT_USDC} USDC into Circle GatewayWallet (${walletMode === 'passkey' ? 'gasless via paymaster' : 'EOA via Reown'})...`);
+    gatewayDeposit.reset();
+    await gatewayDeposit.deposit(DEFAULT_GATEWAY_DEPOSIT_USDC);
+  }, [gatewayDeposit, log, walletMode]);
 
   useEffect(() => {
     fetch('/api/x402/relayer-status')
@@ -662,11 +689,14 @@ export default function X402DemoPanel({ compact = false, ticketOnly = false }: X
                     <div className="text-white/50">Do not manually send USDC to GatewayWallet contract.</div>
                     <button
                       type="button"
-                      disabled
-                      className="mt-1.5 w-full cursor-not-allowed rounded border border-[#7CB5C5]/20 bg-[#7CB5C5]/10 py-1.5 text-[#7CB5C5]/50"
+                      onClick={(e) => { e.stopPropagation(); void onClickDeposit(); }}
+                      disabled={gatewayDeposit.step === 'checking' || gatewayDeposit.step === 'approving' || gatewayDeposit.step === 'depositing' || gatewayDeposit.step === 'confirming'}
+                      className="mt-1.5 w-full cursor-pointer rounded border border-[#7CB5C5]/30 bg-[#7CB5C5]/15 py-1.5 text-[#7CB5C5] hover:bg-[#7CB5C5]/20 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      DEPOSIT 1 USDC (coming soon)
+                      {gatewayDeposit.step === 'checking' ? 'CHECKING BALANCE...' : gatewayDeposit.step === 'approving' ? 'APPROVING USDC...' : gatewayDeposit.step === 'depositing' ? 'DEPOSITING...' : gatewayDeposit.step === 'confirming' ? 'CONFIRMING...' : `DEPOSIT ${DEFAULT_GATEWAY_DEPOSIT_USDC} USDC`}
                     </button>
+                    {gatewayDeposit.error && <div className="text-red-300/80">Deposit failed: {gatewayDeposit.error}</div>}
+                    {gatewayDeposit.txHash && <div className="break-all text-green-300/80">Deposit tx: {gatewayDeposit.txHash.slice(0, 18)}...</div>}
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setMode('arc-native'); }}
@@ -741,7 +771,7 @@ export default function X402DemoPanel({ compact = false, ticketOnly = false }: X
 
           {mode === 'circle-gateway' && activeAuthed && (!gatewayBalance?.depositedUsdc || Number(gatewayBalance.depositedUsdc) <= 0) && (
             <div className={`mt-3 ${c.cardRadiusXs} border border-yellow-400/20 bg-yellow-400/10 p-2.5 font-mono leading-5 text-yellow-100/80 ${compact ? 'text-[10.5px]' : 'text-[11px]'}`}>
-              Gateway balance is 0 for this wallet. Real Gateway deposit flow is not yet wired in — use Arc Native for direct on-chain x402 payment, or wait for the deposit SDK integration.
+              Gateway balance is 0 for this wallet. Use the DEPOSIT button above to fund your Gateway balance, or use Arc Native for direct on-chain x402 payment.
             </div>
           )}
 
