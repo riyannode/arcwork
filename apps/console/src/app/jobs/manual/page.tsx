@@ -64,6 +64,9 @@ function JobsPage() {
   const [depositTouched, setDepositTouched] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string>('');
 
+  // Phase 1: split flows. 'simple' = classic JobEscrow. 'milestone' = vault flow.
+  const [flowType, setFlowType] = useState<'simple' | 'milestone'>('simple');
+
   // Filter / sort state for job list
   const [jobSearch, setJobSearch] = useState('');
   const [jobStatusFilter, setJobStatusFilter] = useState<'all' | '0' | '1' | '2' | '3' | '4' | '5' | '6'>('all');
@@ -216,17 +219,17 @@ function JobsPage() {
     }
     if (!isValidAddress(createForm.evaluator)) {
       setStatusTone('error');
-      setTxState('Client address must be a valid 0x wallet.');
+      setTxState('Approver wallet must be a valid 0x wallet.');
       return;
     }
     if (!createForm.jobSpec.trim()) {
       setStatusTone('error');
-      setTxState('Task Description cannot be empty.');
+      setTxState('Task Requirements cannot be empty.');
       return;
     }
     if (createForm.worker.toLowerCase() === createForm.evaluator.toLowerCase()) {
       setStatusTone('error');
-      setTxState('Worker and client cannot be the same address. The worker receives payout — use the agent\u2019s controller or a dedicated worker wallet.');
+      setTxState('Agent payout wallet and approver wallet cannot be the same address. Use the agent controller or a dedicated payout wallet.');
       notify(NOTICE_WORKER_EQUALS_CLIENT);
       return;
     }
@@ -329,10 +332,10 @@ function JobsPage() {
         <div className="mb-8">
           <div className="aureo-mono-label mb-3">PROTOCOL · JOBS</div>
           <h1 className="aureo-display text-[44px] text-[#EAE4D8] md:text-[64px]">
-            Create a <span className="italic text-[#C5A67C]">Job</span>
+            Hire an agent with <span className="italic text-[#C5A67C]">USDC escrow</span>
           </h1>
           <p className="mt-3 max-w-2xl font-mono text-[12px] leading-6 text-[rgba(234,228,216,0.85)]">
-            Pick an agent, assign a task, set a USDC budget, and lock funds in the Settlement Vault.
+            Pick an agent, describe the task, deposit USDC, and release payment only after you approve the work.
           </p>
         </div>
 
@@ -344,13 +347,48 @@ function JobsPage() {
           <Link href="/register" className="btn-primary">REGISTER AGENT</Link>
         </div>
 
-        {/* Role explainer strip — compact, scannable */}
+        {/* Role explainer strip — user-friendly labels */}
         <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-1 border-l-2 border-[#C5A67C]/40 pl-4 font-mono text-[10.5px] text-[rgba(234,228,216,0.84)]">
-          <span><span className="text-[#C5A67C]">Client</span> &rarr; funds &amp; approves work</span>
+          <span><span className="text-[#C5A67C]">Buyer</span> &rarr; creates job &amp; deposits USDC</span>
           <span className="text-[rgba(234,228,216,0.85)]">&middot;</span>
-          <span><span className="text-[#C5A67C]">Worker</span> &rarr; completes &amp; receives payout</span>
+          <span><span className="text-[#C5A67C]">Agent / Worker</span> &rarr; completes task &amp; receives payout</span>
           <span className="text-[rgba(234,228,216,0.85)]">&middot;</span>
-          <span><span className="text-[#C5A67C]">Agent</span> &rarr; on-chain identity</span>
+          <span><span className="text-[#C5A67C]">Approver</span> &rarr; reviews result &amp; releases payment</span>
+        </div>
+
+        {/* Flow type selector tabs */}
+        <div className="mb-6 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setFlowType('simple')}
+            className={`px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] transition ${
+              flowType === 'simple'
+                ? 'border border-[#C5A67C] bg-[rgba(197,166,124,0.12)] text-[#EAE4D8]'
+                : 'border border-[rgba(255,255,255,0.1)] bg-transparent text-[rgba(234,228,216,0.6)] hover:text-[rgba(234,228,216,0.85)]'
+            }`}
+          >
+            Simple Job
+          </button>
+          <button
+            type="button"
+            onClick={() => setFlowType('milestone')}
+            className={`px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.14em] transition ${
+              flowType === 'milestone'
+                ? 'border border-[#C5A67C] bg-[rgba(197,166,124,0.12)] text-[#EAE4D8]'
+                : 'border border-[rgba(255,255,255,0.1)] bg-transparent text-[rgba(234,228,216,0.6)] hover:text-[rgba(234,228,216,0.85)]'
+            }`}
+          >
+            Milestone Job
+          </button>
+        </div>
+
+        {/* Flow description */}
+        <div className="mb-5 font-mono text-[10.5px] leading-5 text-[rgba(234,228,216,0.78)]">
+          {flowType === 'simple' ? (
+            <span>One task, one budget, one delivery, one approval. Best for quick jobs under 24 hours.</span>
+          ) : (
+            <span>Split payment into milestones. Approve each delivery separately. Dispute-ready for larger work.</span>
+          )}
         </div>
 
         {/* Connected wallet badge */}
@@ -359,7 +397,7 @@ function JobsPage() {
             <span className="h-1.5 w-1.5 rounded-full bg-[#B8CD7E]" />
             Connected as <span className="text-[#EAE4D8]">{shortenAddress(address)}</span>
             <span className="text-[rgba(234,228,216,0.84)]">&middot;</span>
-            <span className="text-[#C5A67C]">Client</span>
+            <span className="text-[#C5A67C]">Buyer</span>
           </div>
         )}
 
@@ -408,7 +446,7 @@ function JobsPage() {
                 <input
                   value={jobSearch}
                   onChange={(e) => setJobSearch(e.target.value)}
-                  placeholder="Search job ID, agent, worker, client…"
+                  placeholder="Search job ID, agent, payout wallet, approver…"
                   className="input-mono flex-1"
                   autoComplete="off"
                   spellCheck={false}
@@ -430,7 +468,7 @@ function JobsPage() {
                   onClick={() => setMyJobsOnly((v) => !v)}
                   disabled={!address}
                   className={`btn-bordered px-3 py-2 text-[10px] ${myJobsOnly ? 'border-[#C5A67C] text-[#C5A67C]' : ''}`}
-                  title={address ? 'Show jobs where this wallet is client, worker, or evaluator' : 'Connect wallet to filter your jobs'}
+                  title={address ? 'Show jobs where this wallet is buyer, payout wallet, or approver' : 'Connect wallet to filter your jobs'}
                 >
                   MY JOBS
                 </button>
@@ -511,8 +549,8 @@ function JobsPage() {
                         </div>
                       </div>
                       <div className="mt-3 grid gap-2 md:grid-cols-2">
-                        <div className="font-mono text-[10px] text-[rgba(234,228,216,0.85)]">Worker {shortenAddress(job.worker)}</div>
-                        <div className="font-mono text-[10px] text-[rgba(234,228,216,0.85)]">Client {shortenAddress(job.evaluator)}</div>
+                        <div className="font-mono text-[10px] text-[rgba(234,228,216,0.85)]">Payout {shortenAddress(job.worker)}</div>
+                        <div className="font-mono text-[10px] text-[rgba(234,228,216,0.85)]">Approver {shortenAddress(job.evaluator)}</div>
                       </div>
                       <div className="mt-2 font-mono text-[10px] text-[rgba(234,228,216,0.85)]">WorkProof {job.proofMetadataURI ? 'available' : job.status === 5 ? 'pending metadata' : 'not minted yet'}</div>
                     </div>
@@ -550,6 +588,8 @@ function JobsPage() {
           </section>
 
           <section className="space-y-6">
+            {flowType === 'simple' ? (
+              <>
             <div className="aureo-panel p-4 md:p-6">
               <div className="flex items-center gap-2">
                 <div className="aureo-mono-label">STEP 1</div>
@@ -561,7 +601,7 @@ function JobsPage() {
               </div>
               <h2 className="mt-2 aureo-display text-[28px] text-[#EAE4D8]">Create job assignment</h2>
               <p className="mt-1 font-mono text-[11px] leading-5 text-[rgba(234,228,216,0.78)]">
-                Assign work to a registered agent. Set the worker wallet and approval authority.
+                Assign work to a registered agent. Set the payout wallet and approver authority.
               </p>
 
               <div className="mt-5 space-y-4">
@@ -620,7 +660,7 @@ function JobsPage() {
 
                 <div>
                   <div className="mb-1.5 flex items-center justify-between">
-                    <label className="block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.82)]">WORKER ADDRESS</label>
+                    <label className="block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.82)]">AGENT PAYOUT WALLET</label>
                     {customWorker && (
                       <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#C5A67C]">Custom worker</span>
                     )}
@@ -631,21 +671,21 @@ function JobsPage() {
                       setWorkerTouched(true);
                       setCreateForm((c) => ({ ...c, worker: e.target.value }));
                     }}
-                    placeholder={selectedAgent ? selectedAgent.controller : '0x... worker wallet'}
+                    placeholder={selectedAgent ? selectedAgent.controller : '0x... agent payout wallet'}
                     className="input-mono"
                   />
                   <div className="mt-1.5 font-mono text-[10.5px] text-[rgba(234,228,216,0.85)]">
                     {selectedAgent && !customWorker
-                      ? 'Auto-filled with the selected agent\u2019s controller. Edit to use a different worker wallet.'
-                      : 'Worker and client cannot be the same address. The worker receives payout — use the agent\u2019s controller or a dedicated worker wallet.'}
+                      ? 'Auto-filled with the selected agent\u2019s controller. Edit to use a different payout wallet.'
+                      : 'Wallet that receives the USDC payout. Must differ from the Approver wallet.'}
                   </div>
                 </div>
 
                 <div>
                   <div className="mb-1.5 flex items-center justify-between">
-                    <label className="block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.82)]">CLIENT ADDRESS</label>
+                    <label className="block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.82)]">APPROVER WALLET</label>
                     {customClient && (
-                      <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#C5A67C]">Custom evaluator</span>
+                      <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#C5A67C]">Custom approver</span>
                     )}
                   </div>
                   <input
@@ -657,10 +697,13 @@ function JobsPage() {
                     placeholder={address ? address : 'Connect wallet to auto-fill'}
                     className="input-mono"
                   />
+                  <div className="mt-1.5 font-mono text-[10.5px] text-[rgba(234,228,216,0.85)]">
+                    Wallet allowed to approve or reject the work. Auto-filled with your connected wallet.
+                  </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.82)]">TASK DESCRIPTION</label>
+                  <label className="mb-1.5 block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.82)]">TASK REQUIREMENTS</label>
                   <textarea
                     value={createForm.jobSpec}
                     onChange={(e) => setCreateForm((c) => ({ ...c, jobSpec: e.target.value }))}
@@ -684,7 +727,7 @@ function JobsPage() {
                   Developer details
                 </summary>
                 <div className="mt-2 font-mono text-[9.5px] leading-4 text-[rgba(234,228,216,0.85)]">
-                  <code className="text-[rgba(234,228,216,0.85)]">createJob(agentId, worker, evaluator, taskDescription)</code> — &ldquo;Client Address&rdquo; maps to the <code className="text-[rgba(234,228,216,0.85)]">evaluator</code> contract parameter.
+                  <code className="text-[rgba(234,228,216,0.85)]">createJob(agentId, worker, evaluator, taskDescription)</code> — &ldquo;Approver Wallet&rdquo; maps to the <code className="text-[rgba(234,228,216,0.85)]">evaluator</code> contract parameter; &ldquo;Agent Payout Wallet&rdquo; maps to <code className="text-[rgba(234,228,216,0.85)]">worker</code>.
                 </div>
               </details>
 
@@ -692,7 +735,7 @@ function JobsPage() {
                 <div className="mt-4 rounded-none border border-[rgba(184,205,126,0.35)] bg-[rgba(184,205,126,0.08)] p-4">
                   <div className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-[#B8CD7E]">Step 1 complete</div>
                   <div className="mt-2 font-mono text-[12px] text-[#EAE4D8]">Job #{createdJobId} created</div>
-                  <div className="mt-1 font-mono text-[10.5px] text-[rgba(234,228,216,0.82)]">Step 2 is prefilled below. Set Budget and Deposit Amount next.</div>
+                  <div className="mt-1 font-mono text-[10.5px] text-[rgba(234,228,216,0.82)]">Step 2 is prefilled below. Deposit USDC next.</div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Link href={`/job/${createdJobId}`} className="btn-bordered px-3 py-2 text-[9.5px]">OPEN JOB DETAIL</Link>
                     <button type="button" onClick={() => setFundForm((current) => ({ ...current, jobId: createdJobId }))} className="btn-primary px-3 py-2 text-[9.5px]">USE IN FUND STEP</button>
@@ -703,9 +746,9 @@ function JobsPage() {
 
             <div className="aureo-panel p-4 md:p-6">
               <div className="aureo-mono-label mb-2">STEP 2</div>
-              <h2 className="aureo-display text-[28px] text-[#EAE4D8]">Approve &amp; fund Settlement Vault</h2>
+              <h2 className="mt-2 aureo-display text-[28px] text-[#EAE4D8]">Approve &amp; Deposit USDC</h2>
               <p className="mt-1 font-mono text-[11px] leading-5 text-[rgba(234,228,216,0.78)]">
-                Set the agreed budget, approve USDC, and deposit funds into the Settlement Vault. The escrow holds USDC until the client approves the work.
+                Deposit USDC into the Settlement Vault. Your wallet may ask for up to 3 confirmations: set budget, approve USDC spending, and deposit funds.
               </p>
 
               <div className="mt-5 space-y-4">
@@ -747,7 +790,7 @@ function JobsPage() {
                     placeholder="1"
                     className="input-mono"
                   />
-                  <div className="mt-1.5 font-mono text-[10.5px] text-[rgba(234,228,216,0.85)]">USDC sent into the Settlement Vault for this job. Usually equal to Budget.</div>
+                  <div className="mt-1.5 font-mono text-[10.5px] text-[rgba(234,228,216,0.85)]">Your USDC stays locked in the Settlement Vault until the work is approved.</div>
                 </div>
 
                 {selectedFundingJob && (
@@ -755,14 +798,14 @@ function JobsPage() {
                     <div className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-[rgba(234,228,216,0.85)]">Funding Preview</div>
                     <div className="mt-2 grid gap-2 md:grid-cols-2">
                       <div className="font-mono text-[10.5px] text-[#EAE4D8]">Status {JOB_STATUS[selectedFundingJob.status]}</div>
-                      <div className="font-mono text-[10.5px] text-[#EAE4D8]">Worker {shortenAddress(selectedFundingJob.worker)}</div>
+                      <div className="font-mono text-[10.5px] text-[#EAE4D8]">Payout {shortenAddress(selectedFundingJob.worker)}</div>
                     </div>
                   </div>
                 )}
               </div>
 
               <button onClick={handleFundJob} disabled={!isConnected || isCreating || isFunding} className="btn-primary mt-5">
-                {isFunding ? 'FUNDING\u2026' : 'APPROVE & FUND'}
+                {isFunding ? 'DEPOSITING\u2026' : 'APPROVE & DEPOSIT USDC'}
               </button>
 
               <details className="mt-4 group border-t border-white/5 pt-3">
@@ -775,15 +818,22 @@ function JobsPage() {
               </details>
             </div>
 
-            <VaultDepositPanel />
+              </>
+            ) : (
+              <>
+                <VaultDepositPanel />
 
-            <MilestoneProgressPanel />
+                <MilestoneProgressPanel />
 
-            <DisputeViewer />
+                <DisputeViewer />
+              </>
+            )}
 
             <div className="rounded-none border border-[rgba(255,255,255,0.08)] bg-[rgba(10,10,10,0.6)] p-5 font-mono text-[11px] leading-5 text-[rgba(234,228,216,0.82)]">
               {isConnected
-                ? '\u2713 Wallet connected. Manual flow: Select Agent \u2192 Create Job \u2192 Deposit/Fund Vault \u2192 Submit Milestones \u2192 Approve or Dispute \u2192 Settle Payment \u2192 WorkProof minted.'
+                ? flowType === 'simple'
+                  ? '\u2713 Wallet connected. Simple flow: Choose Agent \u2192 Describe Task \u2192 Deposit USDC \u2192 Review Work \u2192 Release Payment \u2192 WorkProof minted.'
+                  : '\u2713 Wallet connected. Milestone flow: Choose Worker \u2192 Split Milestones \u2192 Deposit Total Budget \u2192 Approve Each Milestone \u2192 Resolve Disputes if needed.'
                 : '\u26a0 Connect wallet to submit protocol writes.'}
             </div>
           </section>
