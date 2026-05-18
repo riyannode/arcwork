@@ -30,7 +30,7 @@ export function AdminBondPanel() {
   const [msg, setMsg] = useState('');
 
   const isOwner = owner && address && owner.toLowerCase() === address.toLowerCase();
-  const notDeployed = BOND_CONFIG_ADDRESS === '0x0000000000000000000000000000000000000000';
+  const notDeployed = (BOND_CONFIG_ADDRESS as string) === '0x0000000000000000000000000000000000000000';
 
   const loadConfig = useCallback(async () => {
     if (notDeployed) return;

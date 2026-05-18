@@ -67,7 +67,7 @@ export function useVaultJob() {
       setState({ step: 'error', message: 'Wallet not connected.', errorReason: 'no_wallet' });
       throw new Error('Wallet not connected.');
     }
-    if (ARC_VAULT_ADDRESS === '0x0000000000000000000000000000000000000000') {
+    if ((ARC_VAULT_ADDRESS as string) === '0x0000000000000000000000000000000000000000') {
       setState({
         step: 'error',
         message: 'ArcVault contract not deployed yet. Update ARC_VAULT_ADDRESS after deploy.',
