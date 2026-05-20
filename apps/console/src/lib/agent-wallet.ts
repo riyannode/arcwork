@@ -1,18 +1,27 @@
 /**
  * agent-wallet.ts — ArcLayer autonomous agent wallet executor.
  *
- * Loads AGENT_EXECUTOR_PRIVATE_KEY from env, creates a viem WalletClient,
- * and provides helpers to:
- *   1. Read on-chain state (USDC balance, allowance, job status)
- *   2. Broadcast calldata transactions (sign + send + wait)
- *   3. Execute complete job lifecycle steps (approve → fund → submit → evaluate → settle)
+ * INTERNAL USE ONLY — Hermes on-chain executor.
  *
- * Design: ArcLayer never auto-signs end-user wallets. The private key here
- * is for backend agents (Hermes, Pythia, custom LLM runtimes) that operate
- * autonomously on their own arc testnet burner wallets.
+ * This module is strictly server-side. It MUST NOT be imported from client
+ * components or API routes that expose it publicly.
+ *
+ * Security model:
+ *   - Only Hermes (AGENT_EXECUTOR_ROLE=hermes) can sign on-chain transactions.
+ *   - Pythia/Apollo are reasoning-only agents. They may sign x402 payments
+ *     via a separate surface, but MUST NOT use this executor for on-chain tx.
+ *   - All transactions are allowlisted by contract + function selector.
+ *   - USDC.approve is additionally decoded: spender must be JOB_ESCROW,
+ *     amount must be <= AGENT_EXECUTOR_MAX_USDC_ATOMIC.
+ *   - Max spend guard applies to approveUsdc, fundJob, and any decoded
+ *     amount in raw executeCalldata.
+ *   - Arc Testnet only (chainId 5042002). Native value transfers blocked.
+ *   - If AGENT_EXECUTOR_PRIVATE_KEY is missing → dryRun only, no signing.
  *
  * Chain: Arc Testnet (5042002). RPC: https://rpc.drpc.testnet.arc.network
  */
+
+import 'server-only';
 
 import {
   createWalletClient,
@@ -26,6 +35,7 @@ import {
   type PublicClient,
   parseUnits,
   formatUnits,
+  decodeAbiParameters,
 } from 'viem';
 import { arcTestnet, ARC_RPC_URLS } from '@arclayer/sdk';
 
@@ -40,6 +50,22 @@ const JOB_ESCROW = '0xF0E1B0709A012AdE0b73596fDC8FA0CE037Dd225' as const;
 
 const USDC_DECIMALS = 6;
 const MAX_GAS_PER_TX = BigInt(500_000);
+
+/**
+ * Per-tx max USDC notional, atomic units (USDC has 6 decimals → 1 USDC = 1e6).
+ * Defaults to 100 USDC per tx if env not set. Set to "0" to disable signing.
+ */
+function getMaxUsdcAtomic(): bigint {
+  const raw = process.env.AGENT_EXECUTOR_MAX_USDC_ATOMIC;
+  if (!raw) return BigInt(100_000_000); // 100 USDC default
+  try {
+    const n = BigInt(raw);
+    if (n < BigInt(0)) throw new Error('negative');
+    return n;
+  } catch {
+    throw new Error(`AGENT_EXECUTOR_MAX_USDC_ATOMIC must be a non-negative integer, got: ${raw}`);
+  }
+}
 
 function getPrivateKey(): Hex {
   const key = process.env.AGENT_EXECUTOR_PRIVATE_KEY;
@@ -171,6 +197,13 @@ function assertHermesExecutor() {
   }
 }
 
+function assertMaxUsdcAmount(amountAtomic: bigint, context: string) {
+  const max = getMaxUsdcAtomic();
+  if (amountAtomic > max) {
+    throw new Error(`${context} amount ${amountAtomic.toString()} exceeds AGENT_EXECUTOR_MAX_USDC_ATOMIC=${max.toString()}`);
+  }
+}
+
 function assertAllowedTx(to: Address, data: Hex, value: bigint) {
   if (CHAIN_ID !== 5042002) throw new Error('agent-wallet only supports Arc Testnet chainId=5042002');
   if (value !== BigInt(0)) throw new Error('native value transfers are not allowed');
@@ -180,6 +213,39 @@ function assertAllowedTx(to: Address, data: Hex, value: bigint) {
     ([, rule]) => rule.to.toLowerCase() === to.toLowerCase() && rule.selector.toLowerCase() === selector,
   );
   if (!allowed) throw new Error(`tx not allowlisted: to=${to} selector=${selector}`);
+
+  const [, allowedName] = allowed;
+  const encodedArgs = `0x${data.slice(10)}` as Hex;
+
+  if (allowedName.to.toLowerCase() === USDC.toLowerCase() && selector === ALLOWED_SELECTORS['USDC.approve'].selector) {
+    const [spender, amount] = decodeAbiParameters(
+      [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }],
+      encodedArgs,
+    ) as readonly [Address, bigint];
+
+    if (spender.toLowerCase() !== JOB_ESCROW.toLowerCase()) {
+      throw new Error(`USDC.approve spender not allowed: ${spender}`);
+    }
+    assertMaxUsdcAmount(amount, 'USDC.approve');
+    return;
+  }
+
+  if (selector === ALLOWED_SELECTORS['JobEscrow.setBudget'].selector) {
+    const [, budget] = decodeAbiParameters(
+      [{ name: 'jobId', type: 'uint256' }, { name: 'budget', type: 'uint256' }],
+      encodedArgs,
+    ) as readonly [bigint, bigint];
+    assertMaxUsdcAmount(budget, 'JobEscrow.setBudget');
+    return;
+  }
+
+  if (selector === ALLOWED_SELECTORS['JobEscrow.fund'].selector) {
+    const [, amount] = decodeAbiParameters(
+      [{ name: 'jobId', type: 'uint256' }, { name: 'amount', type: 'uint256' }],
+      encodedArgs,
+    ) as readonly [bigint, bigint];
+    assertMaxUsdcAmount(amount, 'JobEscrow.fund');
+  }
 }
 
 function dryRunResult(to: Address, data: Hex, reason: string): TxResult {
@@ -245,6 +311,7 @@ async function sendAndWait(to: Address, data: Hex, value = BigInt(0), gas?: bigi
  */
 export async function approveUsdc(amountUsdc: string): Promise<TxResult> {
   const amount = parseUnits(amountUsdc, USDC_DECIMALS);
+  assertMaxUsdcAmount(amount, 'approveUsdc');
   const { encodeFunctionData } = await import('viem');
 
   const data = encodeFunctionData({
@@ -264,6 +331,7 @@ export async function approveUsdc(amountUsdc: string): Promise<TxResult> {
 export async function fundJob(jobId: bigint | string, amountUsdc: string): Promise<TxResult> {
   const jobIdBn = typeof jobId === 'string' ? BigInt(jobId) : jobId;
   const amount = parseUnits(amountUsdc, USDC_DECIMALS);
+  assertMaxUsdcAmount(amount, 'fundJob');
   const { encodeFunctionData } = await import('viem');
 
   const data = encodeFunctionData({
@@ -445,5 +513,5 @@ export async function healthCheck(): Promise<AgentWalletHealth> {
   }
 }
 
-// Export for direct use
-export { agentAddress, getPrivateKey, publicClient, wallet, USDC, JOB_ESCROW, CHAIN_ID, RPC_URL };
+// Safe constants for internal executor telemetry only. Do not export signer/client primitives.
+export { agentAddress, USDC, JOB_ESCROW, CHAIN_ID, RPC_URL };
