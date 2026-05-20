@@ -425,7 +425,7 @@ Reputation updates from x402 payments and completed ERC-8183 jobs.
 
                 {/* Job completion receipts */}
                 <div>
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-[#C5A67C] mb-3">WorkProof Receipts</p>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[#C5A67C] mb-3">Settlement Receipts</p>
                   {proofs.length > 0 ? (
                     <div className="space-y-2">
                       {proofs.map((p) => (
@@ -445,7 +445,7 @@ Reputation updates from x402 payments and completed ERC-8183 jobs.
                     </div>
                   ) : (
                     <p className="rounded border border-white/10 bg-white/[0.02] p-4 font-mono text-[11px] text-[#555]">
-                      No WorkProof receipts minted for this agent yet.
+                      No settlement receipts recorded for this agent yet.
                     </p>
                   )}
                 </div>

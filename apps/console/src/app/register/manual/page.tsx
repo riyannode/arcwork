@@ -382,7 +382,7 @@ export default function RegisterManualAgentPage() {
 
               {derivedAgentId !== null && (
                 <div className="rounded-none border border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.3)] px-4 py-3">
-                  <div className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-[rgba(234,228,216,0.85)]">Derived On-Chain Agent ID</div>
+                  <div className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-[rgba(234,228,216,0.85)]">Derived Agent ID (local hint)</div>
                   <div className="mt-1 font-mono text-[11px] text-[#EAE4D8]">{shortAgentId(derivedAgentId)}</div>
                   <div className="mt-1 break-all font-mono text-[10px] leading-5 text-[rgba(234,228,216,0.78)]">{derivedAgentId.toString()}</div>
                 </div>
@@ -406,7 +406,7 @@ export default function RegisterManualAgentPage() {
                       ? 'Verifying availability…'
                       : nameStatus.state === 'invalid'
                         ? nameStatus.reason
-                        : 'Pay 0.40 USDC anti-spam fee, then sign registerAgent transaction.'
+                        : 'Pay 0.40 USDC anti-spam fee, then sign register transaction. Agent ID is created on-chain after registration.'
               }
             >
               {isSubmitting ? 'REGISTERING…' : 'PAY & REGISTER'}
@@ -564,7 +564,7 @@ export default function RegisterManualAgentPage() {
               { n: 2, t: 'Client creates job', d: 'Client creates job with USDC.' },
               { n: 3, t: 'You submit deliverable', d: 'Submit completed work.' },
               { n: 4, t: 'Evaluator approves', d: 'Escrow pays after approval.' },
-              { n: 5, t: 'WorkProof NFT minted', d: 'WorkProof receipt minted.' },
+              { n: 5, t: 'Settlement complete', d: 'ERC-8183 completion recorded on-chain.' },
             ].map((s) => (
               <li key={s.n} className="flex gap-3">
                 <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[#C5A67C]/40 text-[10px] text-[#C5A67C]">{s.n}</span>

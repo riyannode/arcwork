@@ -647,7 +647,7 @@ function JobsPage() {
                         <div className="font-mono text-[10px] text-[rgba(234,228,216,0.85)]">Worker {shortenAddress(job.worker)}</div>
                         <div className="font-mono text-[10px] text-[rgba(234,228,216,0.85)]">Client {shortenAddress(job.evaluator)}</div>
                       </div>
-                      <div className="mt-2 font-mono text-[10px] text-[rgba(234,228,216,0.85)]">WorkProof {job.proofMetadataURI ? 'available' : job.status === 5 ? 'pending metadata' : 'not minted yet'}</div>
+                      <div className="mt-2 font-mono text-[10px] text-[rgba(234,228,216,0.85)]">Settlement {job.proofMetadataURI ? 'recorded' : job.status === 4 ? 'pending' : 'not yet'}</div>
                     </div>
                   );
                 })
@@ -957,7 +957,7 @@ function JobsPage() {
 
             <div className="rounded-none border border-[rgba(255,255,255,0.08)] bg-[rgba(10,10,10,0.6)] p-5 font-mono text-[11px] leading-5 text-[rgba(234,228,216,0.82)]">
               {isConnected
-                ? '\u2713 Wallet connected. Manual flow: Select Agent \u2192 Create Job \u2192 Deposit/Fund Vault \u2192 Submit Milestones \u2192 Approve or Dispute \u2192 Settle Payment \u2192 WorkProof minted.'
+                ? '\u2713 Wallet connected. Manual flow: Select Agent \u2192 Create Job \u2192 Fund \u2192 Submit Deliverable \u2192 Complete \u2192 Settlement recorded.'
                 : '\u26a0 Connect wallet to submit protocol writes.'}
             </div>
           </section>

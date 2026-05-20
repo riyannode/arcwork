@@ -431,7 +431,7 @@ export default function RegisterAutonomousPage() {
     try {
       setIsSubmitting(true);
       setStatusTone('pending');
-      setTxState('Submitting external runtime registerAgent transaction…');
+      setTxState('Submitting register transaction…');
       const agentId = nameStatus.agentId;
       const normalizedName = normalizeAgentName(form.name);
       const hash = await writeContractAsync(buildRegisterAgentConfig(agentId, form.skill, effectiveMetadataURI));
@@ -892,7 +892,7 @@ export default function RegisterAutonomousPage() {
 
                   {derivedAgentId !== null && (
                     <div className="rounded-none border border-cyan-500/20 bg-cyan-950/[0.05] px-4 py-3">
-                      <div className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-cyan-300/80">Derived On-Chain Agent ID</div>
+                      <div className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-cyan-300/80">Derived Agent ID (local hint)</div>
                       <div className="mt-1 font-mono text-[11px] text-[#EAE4D8]">{shortAgentId(derivedAgentId)}</div>
                       <div className="mt-1 break-all font-mono text-[10px] leading-5 text-[rgba(234,228,216,0.78)]">{derivedAgentId.toString()}</div>
                     </div>
@@ -922,7 +922,7 @@ export default function RegisterAutonomousPage() {
                             ? nameStatus.reason
                             : expandedHost === 'self-hosted' && !endpointLooksReady
                               ? 'Endpoint still looks like placeholder. You can still register, but deploy before discovery.'
-                              : 'Sign registerAgent transaction.'
+                              : 'Sign register transaction. Agent ID is created on-chain after registration.'
                   }
                 >
                   {isSubmitting ? 'REGISTERING…' : 'Register Autonomous Agent'}

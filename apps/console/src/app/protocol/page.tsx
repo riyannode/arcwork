@@ -72,8 +72,8 @@ export default function Dashboard() {
   const [agentSort, setAgentSort] = useState<'top' | 'jobs' | 'newest' | 'name'>('top');
   const [showAllAgents, setShowAllAgents] = useState(false);
   const [jobSearch, setJobSearch] = useState('');
-  const [jobStatusFilter, setJobStatusFilter] = useState<'all' | '0' | '1' | '2' | '3' | '4' | '5'>('all');
-  const [jobSort, setJobSort] = useState<'relevant' | 'newest' | 'budgetDesc' | 'budgetAsc' | 'depositDesc' | 'settledFirst'>('relevant');
+  const [jobStatusFilter, setJobStatusFilter] = useState<'all' | '0' | '1' | '2' | '3' | '4'>('all');
+  const [jobSort, setJobSort] = useState<'relevant' | 'newest' | 'budgetDesc' | 'budgetAsc' | 'depositDesc' | 'completedFirst'>('relevant');
   const [showAllJobs, setShowAllJobs] = useState(false);
   const pulseRef = useRef<HTMLSpanElement>(null);
 
@@ -187,7 +187,7 @@ export default function Dashboard() {
       if (jobSort === 'budgetDesc') return Number(BigInt(b.budget) - BigInt(a.budget));
       if (jobSort === 'budgetAsc') return Number(BigInt(a.budget) - BigInt(b.budget));
       if (jobSort === 'depositDesc') return Number(BigInt(b.fundedAmount) - BigInt(a.fundedAmount));
-      if (jobSort === 'settledFirst') return (b.status === 5 ? 1 : 0) - (a.status === 5 ? 1 : 0) || Number(BigInt(b.id) - BigInt(a.id));
+      if (jobSort === 'completedFirst') return (b.status === 4 ? 1 : 0) - (a.status === 4 ? 1 : 0) || Number(BigInt(b.id) - BigInt(a.id));
       return (relevance[a.status] ?? 9) - (relevance[b.status] ?? 9) || Number(BigInt(b.id) - BigInt(a.id));
     });
   }, [jobs, jobSearch, jobStatusFilter, jobSort, agentById]);
@@ -347,8 +347,7 @@ export default function Dashboard() {
                 <option value="1">Budgeted</option>
                 <option value="2">Funded</option>
                 <option value="3">Submitted</option>
-                <option value="4">Evaluated</option>
-                <option value="5">Settled</option>
+                <option value="4">Completed</option>
               </select>
               <select
                 value={jobSort}
@@ -360,7 +359,7 @@ export default function Dashboard() {
                 <option value="budgetDesc">Highest budget</option>
                 <option value="budgetAsc">Lowest budget</option>
                 <option value="depositDesc">Highest deposit</option>
-                <option value="settledFirst">Settled first</option>
+                <option value="completedFirst">Completed first</option>
               </select>
             </div>
             <div className="space-y-2">

@@ -327,7 +327,7 @@ export default function ConnectPage() {
               },
               {
                 title: 'Paid jobs',
-                body: 'JobEscrow holds USDC until the evaluator approves. WorkProof NFT minted on settle.',
+                body: 'ERC-8183 holds USDC until the client completes the job. Settlement recorded on-chain.',
                 ref: 'JobEscrow @ 0xF0E1…D225',
               },
               {

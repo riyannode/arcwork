@@ -147,7 +147,7 @@ export default function JobDetailPage() {
       );
       setPayload(next);
       setTxState('Deliverable submitted and indexed.');
-    } catch (e) { setTxState(e instanceof Error ? e.message : 'submitDeliverable failed.'); }
+    } catch (e) { setTxState(e instanceof Error ? e.message : 'submit failed.'); }
     finally { setActiveAction(null); }
   }
 
@@ -234,10 +234,10 @@ export default function JobDetailPage() {
             <div className="mt-5 space-y-2.5">
               {[
                 ['client', job ? shortenAddress(job.client) : isLoading ? '…' : '—'],
-                ['worker', job ? shortenAddress(job.worker) : isLoading ? '…' : '—'],
+                ['provider', job ? shortenAddress(job.worker) : isLoading ? '…' : '—'],
                 ['evaluator', job ? shortenAddress(job.evaluator) : isLoading ? '…' : '—'],
                 ['agent', job ? `#${job.agentId}` : isLoading ? '…' : '—'],
-                ['spec hash', job ? `${job.jobSpecHash.slice(0, 10)}…${job.jobSpecHash.slice(-8)}` : isLoading ? '…' : '—'],
+                ['description', job ? `${job.jobSpecHash.slice(0, 10)}…${job.jobSpecHash.slice(-8)}` : isLoading ? '…' : '—'],
                 ['created', job ? new Date(Number(job.createdAt) * 1000).toLocaleString() : isLoading ? '…' : '—'],
               ].map(([label, value]) => (
                 <div key={label} className="ledger-row flex items-center justify-between border border-white/10 bg-black/20 px-4 py-2.5">
@@ -268,7 +268,6 @@ export default function JobDetailPage() {
               <ArtifactRow
                 label="Deliverable hash"
                 value={job?.deliverable || (isLoading ? '…' : 'No deliverable hash.')}
-                href={ipfsToHttp(job?.proofMetadataURI)}
               />
 
               {/* Submitted work preview */}
@@ -349,14 +348,14 @@ export default function JobDetailPage() {
                 <p className="aureo-mono-label" style={{ color: '#B8CD7E' }}>OFFICIAL ERC-8183 SETTLEMENT</p>
                 {proof ? (
                   <div className="mt-2 space-y-1 font-mono text-[11px] text-[#b5b5b5]">
-                    <p className="text-[#C5A67C]">Legacy token #{proof.tokenId}</p>
+                    <p className="text-[#C5A67C]">Record #{proof.tokenId}</p>
                     <p>payer {shortenAddress(proof.payer)}</p>
                     <p>amount {formatUSDC(BigInt(proof.amountPaid))} USDC</p>
                     <p>minted {new Date(Number(proof.mintedAt) * 1000).toLocaleString()}</p>
                   </div>
                 ) : (
                   <p className="mt-2 font-mono text-[11.5px] text-[#a0a0a0]">
-                    {isLoading ? 'Loading proof…' : 'No ERC-8183 completion recorded for this job.'}
+                    {isLoading ? 'Loading…' : 'No ERC-8183 completion recorded for this job.'}
                   </p>
                 )}
               </div>
@@ -392,7 +391,7 @@ export default function JobDetailPage() {
               you are{' '}
               {address.toLowerCase() === job.client.toLowerCase() && <span className="text-[#C5A67C]">CLIENT </span>}
               {address.toLowerCase() === job.evaluator.toLowerCase() && <span className="text-[#B8CD7E]">EVALUATOR </span>}
-              {address.toLowerCase() === job.worker.toLowerCase() && <span className="text-[#9eb8ff]">WORKER </span>}
+              {address.toLowerCase() === job.worker.toLowerCase() && <span className="text-[#9eb8ff]">PROVIDER </span>}
               {address.toLowerCase() !== job.client.toLowerCase() &&
                address.toLowerCase() !== job.evaluator.toLowerCase() &&
                address.toLowerCase() !== job.worker.toLowerCase() && <span>· not a participant</span>}
@@ -436,7 +435,7 @@ export default function JobDetailPage() {
             {job && job.status < 3 && (
               <p className="font-mono text-[11.5px] text-[#a0a0a0]">
                 {job.status === 2
-                  ? '✓ Funded. The service worker should submit deliverable via ERC-8183 submit().'
+                  ? '✓ Funded. The service provider should submit deliverable via ERC-8183 submit().'
                   : 'Job not yet funded. Use setBudget, USDC approve, then fund(jobId, 0x).'}
               </p>
             )}
@@ -453,7 +452,7 @@ export default function JobDetailPage() {
             {showAdvanced && (
               <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_0.9fr]">
                 <div className="space-y-3">
-                  <p className="font-mono text-[10.5px] text-[#a0a0a0]">submit(jobId, deliverable, 0x) · worker only</p>
+                  <p className="font-mono text-[10.5px] text-[#a0a0a0]">submit(jobId, deliverable, 0x) · provider only</p>
                   <input value={deliverableURI} onChange={(e) => setDeliverableURI(e.target.value)} placeholder="ipfs://deliverable-hash-or-uri" className="input-mono" />
                   <button onClick={handleSubmitDeliverable} disabled={!isConnected || activeAction !== null} className="btn-bordered w-full">
                     {activeAction === 'submit' ? 'SUBMITTING…' : 'SUBMIT HASH'}

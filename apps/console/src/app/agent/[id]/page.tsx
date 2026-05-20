@@ -493,7 +493,7 @@ export default function AgentProfilePage() {
                 ))
               ) : (
                 <p className="p-4 font-mono text-[11.5px] text-[#a0a0a0]" style={{ border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(0,0,0,0.3)' }}>
-                  {isLoading ? 'Loading proofs…' : 'No WorkProofs minted for this agent yet.'}
+                  {isLoading ? 'Loading proofs…' : 'No settlement records for this agent yet.'}
                 </p>
               )}
             </div>
