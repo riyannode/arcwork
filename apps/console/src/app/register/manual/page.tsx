@@ -179,9 +179,9 @@ export default function RegisterManualAgentPage() {
       setIsSubmitting(true);
       setIndexerSynced(false);
 
-      // STEP A — Anti-spam x402 fee (0.000001 USDC). Block before touching chain.
+      // STEP A — Anti-spam x402 fee (0.40 USDC). Block before touching chain.
       setStatusTone('pending');
-      setTxState('Step 1/2 · Paying anti-spam fee (0.000001 USDC)…');
+      setTxState('Step 1/2 · Paying anti-spam fee (0.40 USDC)…');
       const payResult = await payAntiSpam();
       if (!payResult.ok) {
         setStatusTone('error');
@@ -376,13 +376,13 @@ export default function RegisterManualAgentPage() {
                       ? 'Verifying availability…'
                       : nameStatus.state === 'invalid'
                         ? nameStatus.reason
-                        : 'Pay 0.000001 USDC anti-spam fee, then sign registerAgent transaction.'
+                        : 'Pay 0.40 USDC anti-spam fee, then sign registerAgent transaction.'
               }
             >
               {isSubmitting ? 'REGISTERING…' : 'PAY & REGISTER'}
             </button>
             <p className="mt-2 font-mono text-[10px] text-[rgba(234,228,216,0.6)] invisible">
-              Anti-spam fee: 0.000001 USDC · Non-refundable · This fee prevents spam listings. It is not escrow funding.
+              Anti-spam fee: 0.40 USDC · Non-refundable · This fee prevents spam listings. It is not escrow funding.
             </p>
           </section>
 
