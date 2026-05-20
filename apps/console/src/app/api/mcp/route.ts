@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { encodeFunctionData, keccak256, stringToHex, toHex, type Hex } from 'viem';
+import { encodeFunctionData, keccak256, stringToHex, toBytes, toHex, type Hex } from 'viem';
 import { AGENT_REGISTRY_ABI, JOB_ESCROW_ABI, CONTRACTS, ARC_TOKENS } from '@arclayer/sdk';
 
 export const runtime = 'nodejs';
@@ -197,21 +197,23 @@ const TOOLS: Record<
   },
   set_budget_calldata: {
     description:
-      'Build calldata for ERC-8183 AgenticCommerce.setBudget(jobId, amount). Sets the USDC budget for a job.',
+      'Build calldata for ERC-8183 AgenticCommerce.setBudget(jobId, amount, optParams). Sets the USDC budget for a job.',
     args: [
       { name: 'jobId', type: 'string', required: true, description: 'Job ID (uint256).' },
       { name: 'amount', type: 'string', required: true, description: 'Budget in USDC atomic units (6 decimals). E.g. "1000000" = 1 USDC.' },
+      { name: 'optParams', type: 'string', description: 'Optional bytes payload (default "0x").' },
     ],
     kind: 'tx_instruction',
     handler: async (args) => {
       const jobIdRaw = String(args.jobId || '').trim();
       const amountRaw = String(args.amount || '').trim();
+      const optParams = (String(args.optParams || '0x').trim() || '0x') as Hex;
       if (!jobIdRaw || !amountRaw) throw new Error('jobId, amount required');
 
       const data = encodeFunctionData({
         abi: JOB_ESCROW_ABI as any,
         functionName: 'setBudget',
-        args: [BigInt(jobIdRaw), BigInt(amountRaw)],
+        args: [BigInt(jobIdRaw), BigInt(amountRaw), optParams],
       });
 
       return {
@@ -261,21 +263,21 @@ const TOOLS: Record<
   },
   fund_job_calldata: {
     description:
-      'Build calldata for ERC-8183 AgenticCommerce.fund(jobId, amount). Pulls USDC from client into escrow.',
+      'Build calldata for ERC-8183 AgenticCommerce.fund(jobId, optParams). Pulls the previously set budget from client into escrow.',
     args: [
       { name: 'jobId', type: 'string', required: true, description: 'Job ID (uint256).' },
-      { name: 'amount', type: 'string', required: true, description: 'Amount in USDC atomic units (6 decimals).' },
+      { name: 'optParams', type: 'string', description: 'Optional bytes payload (default "0x").' },
     ],
     kind: 'tx_instruction',
     handler: async (args) => {
       const jobIdRaw = String(args.jobId || '').trim();
-      const amountRaw = String(args.amount || '').trim();
-      if (!jobIdRaw || !amountRaw) throw new Error('jobId, amount required');
+      const optParams = (String(args.optParams || '0x').trim() || '0x') as Hex;
+      if (!jobIdRaw) throw new Error('jobId required');
 
       const data = encodeFunctionData({
         abi: JOB_ESCROW_ABI as any,
         functionName: 'fund',
-        args: [BigInt(jobIdRaw), BigInt(amountRaw)],
+        args: [BigInt(jobIdRaw), optParams],
       });
 
       return {
@@ -283,9 +285,9 @@ const TOOLS: Record<
         to: CONTRACTS.JOB_ESCROW,
         data,
         value: '0x0',
-        derived: { jobId: jobIdRaw, amountAtomic: amountRaw, amountUsdc: `${Number(amountRaw) / 1e6} USDC` },
+        derived: { jobId: jobIdRaw, fundingSource: 'current job budget', optParams },
         signing: {
-          how: 'Send from the client wallet. USDC.approve(AgenticCommerce, amount) must have been called first.',
+          how: 'Send from the client wallet. USDC.approve(AgenticCommerce, budget) must have been called first.',
           rpc: ARC_RPC,
           gasHint: '~120000',
         },
@@ -298,21 +300,23 @@ const TOOLS: Record<
   },
   submit_job_calldata: {
     description:
-      'Build calldata for ERC-8183 AgenticCommerce.submit(jobId, deliverableHash). Called by the provider after completing the task.',
+      'Build calldata for ERC-8183 AgenticCommerce.submit(jobId, deliverableHash, optParams). Called by the provider after completing the task.',
     args: [
       { name: 'jobId', type: 'string', required: true, description: 'Job ID (uint256).' },
       { name: 'deliverableHash', type: 'string', required: true, description: 'Keccak256 hash of the deliverable content.' },
+      { name: 'optParams', type: 'string', description: 'Optional bytes payload (default "0x").' },
     ],
     kind: 'tx_instruction',
     handler: async (args) => {
       const jobIdRaw = String(args.jobId || '').trim();
       const deliverableHash = String(args.deliverableHash || '').trim();
+      const optParams = (String(args.optParams || '0x').trim() || '0x') as Hex;
       if (!jobIdRaw || !deliverableHash) throw new Error('jobId, deliverableHash required');
 
       const data = encodeFunctionData({
         abi: JOB_ESCROW_ABI as any,
         functionName: 'submit',
-        args: [BigInt(jobIdRaw), deliverableHash as Hex],
+        args: [BigInt(jobIdRaw), deliverableHash as Hex, optParams],
       });
 
       return {
@@ -335,19 +339,41 @@ const TOOLS: Record<
   },
   complete_job_calldata: {
     description:
-      'Build calldata for ERC-8183 AgenticCommerce.complete(jobId). Called by the evaluator to approve and settle the job.',
+      'Build calldata for ERC-8183 AgenticCommerce.complete(jobId, reason, optParams). Called by the evaluator to approve and settle the job. `reason` is a bytes32 (defaults to keccak256("approved")).',
     args: [
       { name: 'jobId', type: 'string', required: true, description: 'Job ID (uint256).' },
+      { name: 'reason', type: 'string', description: 'Reason string (will be keccak256-hashed) OR a 0x-prefixed 32-byte hash. Default keccak256("approved").' },
+      { name: 'reasonHash', type: 'string', description: 'Optional pre-computed bytes32 reason hash; takes precedence over `reason`.' },
+      { name: 'optParams', type: 'string', description: 'Optional bytes payload (default "0x").' },
     ],
     kind: 'tx_instruction',
     handler: async (args) => {
       const jobIdRaw = String(args.jobId || '').trim();
       if (!jobIdRaw) throw new Error('jobId required');
 
+      const reasonHashRaw = String(args.reasonHash || '').trim();
+      const reasonRaw = String(args.reason || '').trim();
+      const optParams = (String(args.optParams || '0x').trim() || '0x') as Hex;
+
+      let resolvedReason: Hex;
+      if (reasonHashRaw) {
+        if (!/^0x[0-9a-fA-F]{64}$/.test(reasonHashRaw)) {
+          throw new Error('reasonHash must be 0x-prefixed 32-byte hex');
+        }
+        resolvedReason = reasonHashRaw as Hex;
+      } else if (reasonRaw) {
+        resolvedReason = (reasonRaw.startsWith('0x') && reasonRaw.length === 66
+          ? reasonRaw
+          : keccak256(toBytes(reasonRaw))) as Hex;
+      } else {
+        // Default = keccak256("approved")
+        resolvedReason = keccak256(toBytes('approved')) as Hex;
+      }
+
       const data = encodeFunctionData({
         abi: JOB_ESCROW_ABI as any,
         functionName: 'complete',
-        args: [BigInt(jobIdRaw)],
+        args: [BigInt(jobIdRaw), resolvedReason, optParams],
       });
 
       return {
@@ -355,7 +381,7 @@ const TOOLS: Record<
         to: CONTRACTS.JOB_ESCROW,
         data,
         value: '0x0',
-        derived: { jobId: jobIdRaw },
+        derived: { jobId: jobIdRaw, reason: resolvedReason, optParams },
         signing: {
           how: 'Send from the evaluator wallet. Releases escrowed USDC to the provider.',
           rpc: ARC_RPC,

@@ -201,21 +201,43 @@ export default function RegisterManualAgentPage() {
         ? `Fee paid (${payResult.txHash.slice(0, 10)}…)`
         : 'Fee paid';
 
-      // STEP B — On-chain registerAgent. x402 fee is non-refundable from this point.
+      // STEP B — On-chain register. x402 fee is non-refundable from this point.
       setStatusTone('pending');
-      setTxState(`${feeNote}. Step 2/2 · Submitting registerAgent transaction…`);
-      const agentId = nameStatus.agentId;
+      setTxState(`${feeNote}. Step 2/2 · Submitting register transaction…`);
       const metadataURI = effectiveMetadataURI;
       const normalizedName = normalizeAgentName(form.name);
-      const hash = await writeContractAsync(buildRegisterAgentConfig(agentId, form.skill, metadataURI));
+      const hash = await writeContractAsync(buildRegisterAgentConfig(metadataURI));
       setTxState(`${feeNote}. Waiting for ${hash.slice(0, 10)}…`);
-      await waitForTransactionReceipt(config, { hash });
+      const receipt = await waitForTransactionReceipt(config, { hash });
+
+      // ERC-8004 mints an ERC-721-like tokenId on chain. Authoritative tokenId
+      // comes from the Transfer(from=0x0, to, tokenId) event in the receipt,
+      // NOT from any client-side name hash.
+      const TRANSFER_TOPIC =
+        '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+      const ZERO_TOPIC = `0x${'0'.repeat(64)}` as const;
+      const registryAddr = CONTRACTS.AGENT_REGISTRY.toLowerCase();
+      const mintLog = receipt.logs.find(
+        (log) =>
+          log.address.toLowerCase() === registryAddr &&
+          log.topics[0] === TRANSFER_TOPIC &&
+          log.topics[1] === ZERO_TOPIC,
+      );
+      if (!mintLog || !mintLog.topics[3]) {
+        throw new Error('Could not parse Transfer event from register receipt');
+      }
+      const agentId = BigInt(mintLog.topics[3]);
+
       setStatusTone('synced');
       setTxState(`✓ Agent "${normalizedName}" registered as ${shortAgentId(agentId)}.`);
       setIsSubmitting(false);
       // Refresh registry list so the new agent shows up
       try {
-        await waitForIndexer<IndexedAgent[]>('/agents', (next) => next.some((a) => a.agentId.toLowerCase() === agentId.toString().toLowerCase()), { attempts: 6, delayMs: 2000 });
+        await waitForIndexer<IndexedAgent[]>(
+          '/agents',
+          (next) => next.some((a) => a.agentId.toLowerCase() === agentId.toString().toLowerCase()),
+          { attempts: 6, delayMs: 2000 },
+        );
         setIndexerSynced(true);
       } catch {
         // Tx is confirmed on chain; indexer just hasn't caught up yet.
@@ -304,7 +326,7 @@ export default function RegisterManualAgentPage() {
             <div className="aureo-mono-label mb-2">STEP 1</div>
             <h2 className="aureo-display text-[28px] text-[#EAE4D8]">Agent details</h2>
             <code className="mt-2 block font-mono text-[10.5px] text-[rgba(234,228,216,0.85)] invisible">
-              AgentRegistry · registerAgent(keccak(name), skillHash, metadataURI)
+              AgentRegistry · register(metadataURI)
             </code>
 
             <div className="mt-5 space-y-4">

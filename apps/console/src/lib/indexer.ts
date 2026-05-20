@@ -14,19 +14,57 @@ export const INDEXER_BASE_URL = process.env.NEXT_PUBLIC_INDEXER_URL || '/api/ind
 
 export type IndexedJob = {
   id: string;
-  agentId: string;
   client: string;
-  worker: string;
+  provider: string;
   evaluator: string;
+  hook: string;
+  expiredAt: string;
+  description: string;
   budget: string;
   fundedAmount: string;
-  createdAt: string;
-  jobSpecHash: string;
-  deliverableURI: string;
-  proofMetadataURI: string;
-  approved: boolean;
+  createdAtBlock: string;
+  updatedAtBlock: string;
+  deliverable: string;
+  completionReason: string;
   status: number;
+  statusLabel: 'Created' | 'Budgeted' | 'Funded' | 'Submitted' | 'Completed';
+
+  // ── Legacy aliases (deprecated) — kept for in-flight UI components migrating
+  // to the official ERC-8183 schema. Populated by the fetch-time adapter
+  // `withLegacyJobAliases()`. New code should use the official fields above.
+  /** @deprecated Use `provider`. */
+  worker: string;
+  /** @deprecated No agent linkage in official ERC-8183 — use `provider` (agent address). */
+  agentId: string;
+  /** @deprecated Use `description`. */
+  jobSpecHash: string;
+  /** @deprecated Use `deliverable` (bytes32 hash). */
+  deliverableURI: string;
+  /** @deprecated No proof URI in official ERC-8183 reference flow. */
+  proofMetadataURI: string;
+  /** @deprecated Use `status === 4` and `completionReason`. */
+  approved: boolean;
+  /** @deprecated Use `createdAtBlock`. */
+  createdAt: string;
 };
+
+/**
+ * Fetch-time adapter — accepts a raw indexer job (official ERC-8183 fields)
+ * and decorates it with deprecated legacy aliases so legacy UI components
+ * compile during migration. Drop this once all consumers are migrated.
+ */
+export function withLegacyJobAliases(job: IndexedJob): IndexedJob {
+  return {
+    ...job,
+    worker: job.provider,
+    agentId: job.provider, // best-effort — official ERC-8183 has no agent linkage
+    jobSpecHash: job.description,
+    deliverableURI: job.deliverable,
+    proofMetadataURI: '',
+    approved: job.status === 4,
+    createdAt: job.createdAtBlock,
+  };
+}
 
 export type IndexedAgent = {
   agentId: string;

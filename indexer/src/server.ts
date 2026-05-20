@@ -1,7 +1,8 @@
 import { createServer, type ServerResponse } from "node:http";
 import { readFileSync } from "node:fs";
-import { DEFAULT_FROM_BLOCK, INDEXER_PORT, POLL_INTERVAL_MS } from "./config";
+import { DEFAULT_FROM_BLOCK, INDEXER_PORT, POLL_INTERVAL_MS, ARC_REFERENCE_WALLET_FILTER } from "./config";
 import { fetchAgentEvents, fetchJobEvents } from "./ingest";
+import { arcWalletFilterActive } from "./projections";
 import {
   readAgentById,
   readAgentEvents,
@@ -174,9 +175,19 @@ createServer((req, res) => {
   }
 
   if (url.pathname === "/health") {
+    const filterActive = arcWalletFilterActive();
+    const isProd = process.env.NODE_ENV === "production";
     writeJson(res, {
       status: "ok",
-      mode: "arc-reference-100%",
+      mode: filterActive ? "arclayer-filtered" : "arc-reference-global",
+      arcLayerWalletFilter: {
+        active: filterActive,
+        walletCount: ARC_REFERENCE_WALLET_FILTER.length,
+        warning:
+          !filterActive && isProd
+            ? "global official Arc reference indexing mode; not filtered to ArcLayer-owned activity"
+            : null,
+      },
       contracts: {
         erc8004: "0x8004A818BFB912233c491871b3d84c89A494BD9e",
         erc8183: "0x0747EEf0706327138c69792bF28Cd525089e4583",

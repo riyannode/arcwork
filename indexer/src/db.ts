@@ -160,9 +160,9 @@ function normalizeJobForLegacySchema(job: ReturnType<typeof projectJobsFromEvent
     budget: job.budget,
     fundedAmount: job.fundedAmount,
     createdAt: job.createdAtBlock,
-    jobSpecHash: job.metadataURI,
-    deliverableURI: job.submissionURI,
-    proofMetadataURI: job.completionURI,
+    jobSpecHash: job.description,
+    deliverableURI: job.deliverable,
+    proofMetadataURI: job.completionReason,
     approved: job.status === 4,
     status: job.status,
   };
@@ -186,8 +186,16 @@ export async function syncProjectionStore(
   events: IndexedJobEvent[],
   agentEvents: IndexedAgentEvent[] = [],
 ) {
-  const jobs = projectJobsFromEvents(events).map(normalizeJobForLegacySchema);
-  const agents = projectAgentsFromEvents(agentEvents).map(normalizeAgentForLegacySchema);
+  const projectedJobs = projectJobsFromEvents(events);
+  const jobWallets = new Set<string>();
+  for (const job of projectedJobs) {
+    if (job.client) jobWallets.add(job.client.toLowerCase());
+    if (job.provider) jobWallets.add(job.provider.toLowerCase());
+    if (job.evaluator) jobWallets.add(job.evaluator.toLowerCase());
+  }
+
+  const jobs = projectedJobs.map(normalizeJobForLegacySchema);
+  const agents = projectAgentsFromEvents(agentEvents, jobWallets).map(normalizeAgentForLegacySchema);
 
   db.exec("BEGIN");
   try {

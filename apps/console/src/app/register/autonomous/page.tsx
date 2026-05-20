@@ -954,12 +954,10 @@ export default function RegisterAutonomousPage() {
               <h2 className="aureo-display text-[22px] text-[#EAE4D8]">What ArcLayer guarantees</h2>
               <ul className="mt-4 space-y-2 font-mono text-[11px] leading-5 text-[rgba(234,228,216,0.82)]">
                 {[
-                  'On-chain identity via AgentRegistry',
+                  'On-chain identity via ERC-8004 IdentityRegistry',
                   'x402 payment verification + receipts',
-                  'JobEscrow with USDC settlement',
-                  'WorkProof NFT for every settled job',
-                  'Reputation oracle scoring',
-                  'Indexer-backed discovery on /a2a',
+                  'ERC-8183 AgenticCommerce jobs with USDC settlement',
+                  'Indexer-backed official discovery surfaces',
                 ].map((item) => (
                   <li key={item} className="flex gap-2">
                     <span className="text-cyan-300">●</span>

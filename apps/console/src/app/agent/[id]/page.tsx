@@ -71,8 +71,8 @@ type AgentDetail = {
   proofs: IndexedProof[];
 };
 
-const JOB_STATUS = ['Created', 'Budgeted', 'Funded', 'Submitted', 'Evaluated', 'Settled', 'Cancelled'] as const;
-const JOB_TONE: Record<number, string> = { 0: '', 1: 'pending', 2: 'pending', 3: 'pending', 4: 'pending', 5: 'success', 6: 'error' };
+const JOB_STATUS = ['Created', 'Budgeted', 'Funded', 'Submitted', 'Completed'] as const;
+const JOB_TONE: Record<number, string> = { 0: '', 1: 'pending', 2: 'pending', 3: 'pending', 4: 'success' };
 
 function parseAgentId(value: string | undefined) {
   return value && /^\d+$/.test(value) ? value : null;
@@ -438,7 +438,7 @@ export default function AgentProfilePage() {
                 <Sparkline values={series} />
               </div>
               <p className="mt-2 font-mono text-[10.5px] leading-5 text-[#a0a0a0] invisible">
-                Reputation projected from ReputationOracle, coupled to paid WorkProof mints.
+                Reputation projected from completed ERC-8183 AgenticCommerce jobs.
               </p>
             </div>
           </section>
