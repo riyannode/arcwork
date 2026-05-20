@@ -240,20 +240,33 @@ export default function Dashboard() {
 
         {/* Live status + payment rails */}
         <div className="mb-8 grid grid-cols-1 gap-3 lg:grid-cols-[0.95fr_1.15fr_0.9fr]">
-          <Panel title="LIVE MODULES" sub="Core services">
+          <Panel title="LIVE MODULES" sub="Active core · ERC-8004 / ERC-8183 / USDC / x402">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {['Agent Registry', 'Settlement Vault', 'WorkProof', 'A2A Registry', 'Reputation', 'Indexer'].map((name) => (
+              {['ERC-8004 IdentityRegistry', 'ERC-8183 AgenticCommerce', 'USDC', 'x402 Paid API', 'Indexer'].map((name) => (
                 <div key={name} className="flex items-center gap-2 rounded-sm border border-[#B8CD7E]/15 bg-[#B8CD7E]/[0.035] px-3 py-2 font-mono text-[10.5px] text-[rgba(234,228,216,0.9)]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#B8CD7E]" aria-hidden="true" />
                   <span>{name}</span>
                 </div>
               ))}
             </div>
+            <div className="mt-3 border-t border-white/5 pt-3">
+              <div className="aureo-mono-label mb-2" style={{ color: 'rgba(234, 228, 216, 0.55)', fontSize: '9.5px' }}>
+                EXPERIMENTAL · LEGACY
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {['A2A Custom Registry', 'WorkProof', 'ReputationOracle', 'MilestoneEscrow', 'ArcVault', 'MarketMirror'].map((name) => (
+                  <div key={name} className="flex items-center gap-2 rounded-sm border border-white/5 bg-black/20 px-3 py-2 font-mono text-[10.5px]" style={{ color: 'rgba(234, 228, 216, 0.5)' }}>
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(234, 228, 216, 0.35)' }} aria-hidden="true" />
+                    <span>{name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </Panel>
 
           <Panel
             title="PAYMENT RAILS"
-            sub="Pay-per-call or escrow"
+            sub="Active x402 + USDC paid access"
             action={<Link href="/api/x402/supported" className="font-mono text-[11px]" style={{ color: '#C5A67C' }}>INSPECT CONFIG ↗</Link>}
           >
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">

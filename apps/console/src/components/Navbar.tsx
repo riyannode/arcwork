@@ -42,10 +42,10 @@ const NotifBell = dynamic(() => import('./NotifBell'), {
 
 const NAV_LINKS = [
   { href: '/protocol', label: 'PROTOCOL', anchor: null },
-  { href: '/live-a2a-agent', label: 'LIVE A2A AGENT', anchor: null },
-  { href: '/register', label: 'AGENT', anchor: null },
+  { href: '/register', label: 'AGENTS', anchor: null },
   { href: '/jobs', label: 'JOBS', anchor: null },
-  { href: '/docs', label: 'SDK', anchor: null },
+  { href: '/a2a', label: 'A2A', anchor: null },
+  { href: '/docs', label: 'DOCS', anchor: null },
 ] as const;
 
 export default function Navbar() {
@@ -97,7 +97,7 @@ export default function Navbar() {
               ARCLAYER
             </span>
             <span className="mt-1 hidden font-mono text-[9px] tracking-[0.2em] text-[#C5A67C] md:block">
-              x402 · ESCROW · PROOF
+              x402 · ERC-8004 · ERC-8183
             </span>
           </div>
         </Link>
