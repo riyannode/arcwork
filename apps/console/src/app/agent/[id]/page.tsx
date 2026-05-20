@@ -475,7 +475,7 @@ export default function AgentProfilePage() {
           </section>
 
           <section className="aureo-panel p-4 md:p-6">
-            <div className="aureo-mono-label mb-2">PROOF OF WORK</div>
+            <div className="aureo-mono-label mb-2">SETTLEMENT RECORDS</div>
             <h2 className="aureo-display text-[24px] text-[#EAE4D8]">Soulbound history</h2>
             <div className="mt-5 space-y-3">
               {proofs.length > 0 ? (
