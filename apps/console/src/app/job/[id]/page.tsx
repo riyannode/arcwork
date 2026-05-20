@@ -351,7 +351,7 @@ export default function JobDetailPage() {
                     <p className="text-[#C5A67C]">Record #{proof.tokenId}</p>
                     <p>payer {shortenAddress(proof.payer)}</p>
                     <p>amount {formatUSDC(BigInt(proof.amountPaid))} USDC</p>
-                    <p>minted {new Date(Number(proof.mintedAt) * 1000).toLocaleString()}</p>
+                    <p>recorded {new Date(Number(proof.mintedAt) * 1000).toLocaleString()}</p>
                   </div>
                 ) : (
                   <p className="mt-2 font-mono text-[11.5px] text-[#a0a0a0]">
