@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withX402 } from '@/lib/x402';
+import { submitA2AJob } from '@/lib/a2a/jobs';
 
 /**
  * POST /api/x402/jobs/[id]/submit-proof — x402-gated work proof submission.
@@ -26,20 +27,25 @@ async function handler(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ ok: false, error: 'missing_fields', message: 'agentId and proofData required' }, { status: 400 });
     }
 
-    const { createHash } = await import('crypto');
-    const receiptId = `receipt_${createHash('sha256').update(JSON.stringify({ jobId, agentId, proofData, ts: Date.now() })).digest('hex').slice(0, 16)}`;
+    const result = await submitA2AJob(jobId, {
+      agentId,
+      output: summary || 'Work completed',
+      proof: { proofType: proofType || 'generic', proofData },
+      summary,
+    });
+
+    if (!result.ok) {
+      return NextResponse.json({ ok: false, error: result.error }, { status: result.error === 'job_not_found' ? 404 : 400 });
+    }
 
     return NextResponse.json({
       ok: true,
       paid: true,
+      job: result.job,
       receipt: {
-        id: receiptId,
-        jobId,
-        agentId,
+        ...result.receipt,
         proofType: proofType || 'generic',
         summary: summary || 'Work completed',
-        submittedAt: new Date().toISOString(),
-        status: 'pending_verification',
       },
     });
   } catch (err: any) {

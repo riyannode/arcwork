@@ -106,9 +106,9 @@ export function VaultDepositPanel() {
 
   return (
     <div className="aureo-panel p-4 md:p-6">
-      <div className="aureo-mono-label mb-2">VAULT · ON-CHAIN ESCROW</div>
+      <div className="aureo-mono-label mb-2">SETTLEMENT VAULT · EXPERIMENTAL MODE</div>
       <h2 className="aureo-display text-[28px] text-[#EAE4D8]">
-        Multi-milestone <span className="italic text-[#C5A67C]">vault deposit</span>
+        Settlement <span className="italic text-[#C5A67C]">Vault</span>
       </h2>
       <p className="mt-1 font-mono text-[11px] leading-5 text-[rgba(234,228,216,0.78)] invisible">
         Dual-vault system: V1 (Open Pool, instant withdraw) → V2 (Escrow Lock, locked on jobber accept). Auto-resolved disputes via AI · 7-tier performance bond · 48hr approval window.

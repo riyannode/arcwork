@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { recoverMessageAddress } from 'viem';
-import { createApiKey, revokeApiKey } from '@/lib/a2a/auth';
+import { createApiKey, listApiKeys, revokeApiKey } from '@/lib/a2a/auth';
 import { getManifest } from '@/lib/a2a/manifest';
 import { applyRateLimit } from '@/lib/rate-limit';
 
@@ -65,6 +65,15 @@ async function verifyControllerSignature(input: {
   }
 
   return { ok: true, signer };
+}
+
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const agentId = req.nextUrl.searchParams.get('agentId')?.trim();
+  if (!agentId) {
+    return NextResponse.json({ ok: false, error: 'agentId is required' }, { status: 400 });
+  }
+  const keys = await listApiKeys(agentId);
+  return NextResponse.json({ ok: true, agentId, keys });
 }
 
 /**

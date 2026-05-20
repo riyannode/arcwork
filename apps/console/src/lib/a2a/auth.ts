@@ -84,6 +84,42 @@ export async function verifyApiKey(rawKey: string): Promise<VerifiedKey | null> 
   };
 }
 
+// ─── Key listing ──────────────────────────────────────────────────────────────
+
+export async function listApiKeys(agentId: string): Promise<Array<{
+  id: string;
+  agentId: string;
+  keyPrefix: string;
+  label: string | null;
+  scopes: string[];
+  createdAt: string | null;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+}>> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('id, agent_id, key_prefix, label, scopes, created_at, last_used_at, revoked_at')
+    .eq('agent_id', agentId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[auth] listApiKeys error', error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    agentId: row.agent_id,
+    keyPrefix: row.key_prefix,
+    label: row.label,
+    scopes: row.scopes ?? [],
+    createdAt: row.created_at,
+    lastUsedAt: row.last_used_at,
+    revokedAt: row.revoked_at,
+  }));
+}
+
 // ─── Key revocation ───────────────────────────────────────────────────────────
 
 export async function revokeApiKey(keyId: string, agentId: string): Promise<boolean> {
