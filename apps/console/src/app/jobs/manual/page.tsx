@@ -24,9 +24,87 @@ import { DisputeViewer } from '@/components/vault/DisputeViewer';
 
 const JOB_STATUS = ['Created', 'Budgeted', 'Funded', 'Submitted', 'Evaluated', 'Settled', 'Cancelled'] as const;
 const JOB_TONE: Record<number, string> = { 0: '', 1: 'pending', 2: 'pending', 3: 'pending', 4: 'pending', 5: 'success', 6: 'error' };
+const MANUAL_CATEGORIES = [
+  { key: 'Smart Contract', copy: 'Audit, escrow, Solidity, protocol tasks.' },
+  { key: 'Frontend', copy: 'UI, wallet, dashboard, x402 integration.' },
+  { key: 'Backend', copy: 'API, routes, database, server logic.' },
+  { key: 'AI Agent', copy: 'LLM runtime, agent setup, A2A workflow.' },
+  { key: 'Security Audit', copy: 'Threat review, exploits, risk reports.' },
+  { key: 'Data / Research', copy: 'Market, signal, dataset, research tasks.' },
+  { key: 'Design / UI', copy: 'UX, visuals, screens, product polish.' },
+  { key: 'DevOps', copy: 'Deploy, infra, Vercel, monitoring.' },
+  { key: 'Documentation', copy: 'Guides, README, integration docs.' },
+  { key: 'Other', copy: 'Custom escrow work.' },
+] as const;
+const CATEGORY_KEYS = MANUAL_CATEGORIES.map((c) => c.key);
+type ManualCategory = (typeof CATEGORY_KEYS)[number];
+const DELIVERY_TIMES = ['< 1 hour', '1–6 hours', '24 hours', '2–7 days', 'Custom'] as const;
+const DIFFICULTIES = ['Simple', 'Medium', 'Advanced'] as const;
+const JOB_TEMPLATES = [
+  { name: 'Smart contract audit', category: 'Smart Contract', title: 'Audit escrow flow', jobSpec: 'Review approve/fund/settle logic and report issues.', duration: '24 hours', difficulty: 'Advanced' },
+  { name: 'Frontend wallet integration', category: 'Frontend', title: 'Fix wallet UI flow', jobSpec: 'Improve wallet connection, loading states, and action clarity.', duration: '1–6 hours', difficulty: 'Medium' },
+  { name: 'Backend API task', category: 'Backend', title: 'Secure API route', jobSpec: 'Add auth checks and improve error handling.', duration: '24 hours', difficulty: 'Medium' },
+  { name: 'AI agent setup', category: 'AI Agent', title: 'Connect external agent runtime', jobSpec: 'Configure an agent endpoint and test job execution.', duration: '2–7 days', difficulty: 'Advanced' },
+  { name: 'Documentation task', category: 'Documentation', title: 'Write integration guide', jobSpec: 'Explain setup, usage, and expected flow.', duration: '1–6 hours', difficulty: 'Simple' },
+] as const;
+type ManualJobDisplay = { category: ManualCategory; title: string; description: string; duration: string; difficulty: string; isStructured: boolean };
 
 function isValidAddress(value: string) {
   return /^0x[a-fA-F0-9]{40}$/.test(value.trim());
+}
+
+function normalizeCategory(value: unknown): ManualCategory {
+  const text = String(value ?? '').trim().toLowerCase();
+  return CATEGORY_KEYS.find((c) => c.toLowerCase() === text) ?? 'Other';
+}
+
+function inferManualJobCategory(job: IndexedJob, agent?: IndexedAgent | null): ManualCategory {
+  const haystack = [
+    (job as IndexedJob & { taskDescription?: string; jobSpec?: string }).taskDescription,
+    (job as IndexedJob & { jobSpec?: string }).jobSpec,
+    job.jobSpecHash,
+    agent?.metadataURI,
+    agent ? parseAgentSkill(agent.metadataURI) : '',
+    agent ? displayAgentLabel({ agentId: agent.agentId, metadataURI: agent.metadataURI }) : '',
+  ].join(' ').toLowerCase();
+  if (/security|exploit|threat|pentest|vulnerab/.test(haystack)) return 'Security Audit';
+  if (/solidity|escrow|contract|audit|protocol/.test(haystack)) return 'Smart Contract';
+  if (/frontend|ui|react|next|wallet|dashboard/.test(haystack)) return 'Frontend';
+  if (/backend|api|route|database|supabase|server/.test(haystack)) return 'Backend';
+  if (/agent|llm|a2a|autonomous|runtime/.test(haystack)) return 'AI Agent';
+  if (/data|research|market|signal/.test(haystack)) return 'Data / Research';
+  if (/design|ux|visual/.test(haystack)) return 'Design / UI';
+  if (/devops|deploy|vercel|infra|monitor/.test(haystack)) return 'DevOps';
+  if (/docs|guide|readme|documentation/.test(haystack)) return 'Documentation';
+  return 'Other';
+}
+
+function getManualJobDisplay(job: IndexedJob, agent?: IndexedAgent | null): ManualJobDisplay {
+  const raw = (job as IndexedJob & { taskDescription?: string; jobSpec?: string }).taskDescription ?? (job as IndexedJob & { jobSpec?: string }).jobSpec ?? '';
+  if (raw && raw.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(raw) as Partial<Record<'category' | 'title' | 'description' | 'duration' | 'difficulty', string>>;
+      return {
+        category: normalizeCategory(parsed.category),
+        title: parsed.title?.trim() || `Manual Job #${job.id}`,
+        description: parsed.description?.trim() || `Escrow job assigned to ${agent ? displayAgentLabel({ agentId: agent.agentId, metadataURI: agent.metadataURI }) : shortAgentId(job.agentId)}`,
+        duration: parsed.duration?.trim() || 'Unspecified',
+        difficulty: parsed.difficulty?.trim() || 'Unspecified',
+        isStructured: true,
+      };
+    } catch {
+      // Legacy indexer rows may only expose jobSpecHash. Keep rendering safe.
+    }
+  }
+  const agentLabel = agent ? displayAgentLabel({ agentId: agent.agentId, metadataURI: agent.metadataURI }) : shortAgentId(job.agentId);
+  return {
+    category: inferManualJobCategory(job, agent),
+    title: `Manual Job #${job.id}`,
+    description: `Escrow job assigned to ${agentLabel}`,
+    duration: 'Unspecified',
+    difficulty: 'Unspecified',
+    isStructured: false,
+  };
 }
 
 export default function JobsPageRoute() {
@@ -53,10 +131,14 @@ function JobsPage() {
   const [txState, setTxState] = useState<string | null>(null);
   const [statusTone, setStatusTone] = useState<'idle' | 'pending' | 'synced' | 'error'>('idle');
   const [createForm, setCreateForm] = useState({
+    category: 'Smart Contract',
+    title: '',
     agentId: '',
     worker: '',
     evaluator: '',
     jobSpec: '',
+    duration: '24 hours',
+    difficulty: 'Medium',
   });
   const [workerTouched, setWorkerTouched] = useState(false);
   const [evaluatorTouched, setEvaluatorTouched] = useState(false);
@@ -66,6 +148,7 @@ function JobsPage() {
 
   // Filter / sort state for job list
   const [jobSearch, setJobSearch] = useState('');
+  const [jobCategoryFilter, setJobCategoryFilter] = useState<'All' | ManualCategory>('All');
   const [jobStatusFilter, setJobStatusFilter] = useState<'all' | '0' | '1' | '2' | '3' | '4' | '5' | '6'>('all');
   const [jobSort, setJobSort] = useState<'relevant' | 'newest' | 'budgetDesc' | 'budgetAsc' | 'settledFirst'>('relevant');
   const [myJobsOnly, setMyJobsOnly] = useState(false);
@@ -91,12 +174,27 @@ function JobsPage() {
     [agents]
   );
 
+  const jobDisplays = useMemo(
+    () => new Map(jobs.map((job) => [job.id, getManualJobDisplay(job, agentById.get(job.agentId) ?? null)])),
+    [jobs, agentById]
+  );
+
+  const categoryStats = useMemo(() => {
+    return MANUAL_CATEGORIES.map((category) => {
+      const jobCount = jobs.filter((job) => jobDisplays.get(job.id)?.category === category.key).length;
+      const agentCount = agents.filter((agent) => inferManualJobCategory({ id: '', agentId: agent.agentId, client: '', worker: '', evaluator: '', budget: '0', fundedAmount: '0', createdAt: '', jobSpecHash: '', deliverableURI: '', proofMetadataURI: '', approved: false, status: 0 }, agent) === category.key).length;
+      return { ...category, jobCount, agentCount };
+    });
+  }, [jobs, agents, jobDisplays]);
+
   const filteredJobs = useMemo(() => {
     const q = jobSearch.trim().toLowerCase();
     const lower = address?.toLowerCase() ?? '';
     // Relevance: actionable first (Submitted > Evaluated > Funded > Budgeted > Created), terminal last.
     const relevance: Record<number, number> = { 3: 0, 4: 1, 2: 2, 1: 3, 0: 4, 5: 5, 6: 6 };
     const rows = jobs.filter((j) => {
+      const display = jobDisplays.get(j.id) ?? getManualJobDisplay(j, agentById.get(j.agentId) ?? null);
+      if (jobCategoryFilter !== 'All' && display.category !== jobCategoryFilter) return false;
       if (jobStatusFilter !== 'all' && j.status !== Number(jobStatusFilter)) return false;
       if (myJobsOnly && lower) {
         if (
@@ -112,7 +210,7 @@ function JobsPage() {
       const name = agent ? displayAgentLabel({ agentId: agent.agentId, metadataURI: agent.metadataURI }) : shortAgentId(j.agentId);
       const skill = agent ? (formatSkillLabel(parseAgentSkill(agent.metadataURI)) || parseAgentSkill(agent.metadataURI) || '') : '';
       const status = JOB_STATUS[j.status] || '';
-      return [`#${j.id}`, j.id, j.agentId, shortAgentId(j.agentId), j.worker, j.client, j.evaluator, name, skill, status]
+      return [`#${j.id}`, j.id, j.agentId, shortAgentId(j.agentId), j.worker, j.client, j.evaluator, name, skill, status, display.category, display.title, display.description]
         .some((v) => String(v).toLowerCase().includes(q));
     });
     return rows.sort((a, b) => {
@@ -123,7 +221,7 @@ function JobsPage() {
       // 'relevant': actionable first, then newest
       return (relevance[a.status] ?? 9) - (relevance[b.status] ?? 9) || Number(BigInt(b.id) - BigInt(a.id));
     });
-  }, [jobs, jobSearch, jobStatusFilter, jobSort, myJobsOnly, address, agentById]);
+  }, [jobs, jobDisplays, jobSearch, jobCategoryFilter, jobStatusFilter, jobSort, myJobsOnly, address, agentById]);
 
   const visibleJobs = showAllJobs ? filteredJobs : filteredJobs.slice(0, 5);
 
@@ -204,6 +302,16 @@ function JobsPage() {
   }, [fundForm.budget, depositTouched]);
 
   async function handleCreateJob() {
+    if (!createForm.category) {
+      setStatusTone('error');
+      setTxState('Job category is required.');
+      return;
+    }
+    if (!createForm.title.trim()) {
+      setStatusTone('error');
+      setTxState('Job title is required.');
+      return;
+    }
     if (!createForm.agentId) {
       setStatusTone('error');
       setTxState('Register an agent first, then select it here.');
@@ -236,13 +344,24 @@ function JobsPage() {
       setStatusTone('pending');
       setCreatedJobId('');
 
+      const structuredSpec = {
+        category: createForm.category,
+        title: createForm.title.trim(),
+        description: createForm.jobSpec.trim(),
+        duration: createForm.duration,
+        difficulty: createForm.difficulty,
+        agentId: createForm.agentId,
+        worker: createForm.worker.trim(),
+        client: createForm.evaluator.trim(),
+        createdAt: new Date().toISOString(),
+      };
       setTxState('Submitting createJob transaction\u2026');
       const hash = await writeContractAsync(
         buildCreateJobConfig(
           BigInt(createForm.agentId),
           createForm.worker.trim() as `0x${string}`,
           createForm.evaluator.trim() as `0x${string}`,
-          createForm.jobSpec.trim()
+          JSON.stringify(structuredSpec)
         )
       );
       setTxState(`Waiting for ${hash.slice(0, 10)}\u2026`);
@@ -336,22 +455,57 @@ function JobsPage() {
           </p>
         </div>
 
-        {/* Manual Job Section */}
-                <div className="mb-5 flex flex-wrap gap-3">
-          <button onClick={() => loadJobs()} className="btn-bordered">
-            {isRefreshing ? 'REFRESHING\u2026' : 'REFRESH'}
-          </button>
-          <Link href="/register" className="btn-primary">REGISTER AGENT</Link>
+        <div className="mb-5 overflow-x-auto border-y border-white/10 py-2">
+          <nav className="flex min-w-max gap-2" aria-label="Manual job sections">
+            {[['Overview', '#overview'], ['Categories', '#categories'], ['Job Board', '#job-board'], ['Create Job', '#create-job'], ['Approve & Fund', '#fund-job'], ['Advanced Escrow', '#advanced-escrow']].map(([label, href]) => (
+              <a key={href} href={href} className="btn-bordered px-3 py-2 text-[9.5px]">{label}</a>
+            ))}
+          </nav>
         </div>
 
-        {/* Role explainer strip — compact, scannable */}
-        <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-1 border-l-2 border-[#C5A67C]/40 pl-4 font-mono text-[10.5px] text-[rgba(234,228,216,0.84)]">
-          <span><span className="text-[#C5A67C]">Client</span> &rarr; funds &amp; approves work</span>
-          <span className="text-[rgba(234,228,216,0.85)]">&middot;</span>
-          <span><span className="text-[#C5A67C]">Worker</span> &rarr; completes &amp; receives payout</span>
-          <span className="text-[rgba(234,228,216,0.85)]">&middot;</span>
-          <span><span className="text-[#C5A67C]">Agent</span> &rarr; on-chain identity</span>
-        </div>
+        <section id="overview" className="mb-5">
+          <div className="flex flex-wrap gap-3">
+            <button onClick={() => loadJobs()} className="btn-bordered">
+              {isRefreshing ? 'REFRESHING\u2026' : 'REFRESH'}
+            </button>
+            <Link href="/register/manual" className="btn-primary">REGISTER AGENT</Link>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 border-l-2 border-[#C5A67C]/40 pl-4 font-mono text-[10.5px] text-[rgba(234,228,216,0.84)]">
+            <span>Pick an agent, assign a task, lock USDC.</span>
+            <span className="text-[rgba(234,228,216,0.85)]">&middot;</span>
+            <span>x402 is not job funding.</span>
+            <span className="text-[rgba(234,228,216,0.85)]">&middot;</span>
+            <span>Escrow = approve, fund, release USDC.</span>
+          </div>
+        </section>
+
+        <section id="categories" className="mb-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="aureo-mono-label mb-1">MARKETPLACE</div>
+              <h2 className="aureo-display text-[28px] text-[#EAE4D8]">Categories</h2>
+            </div>
+            <span className="font-mono text-[10px] text-[#C5A67C]">{jobs.length} jobs · {agents.length} agents</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+            {categoryStats.map((cat) => (
+              <button
+                key={cat.key}
+                type="button"
+                onClick={() => { setJobCategoryFilter(cat.key); document.getElementById('create-job')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                className="group min-h-[126px] rounded-sm border border-white/[0.07] bg-black/25 p-3 text-left transition hover:border-[#C5A67C]/35 hover:bg-white/[0.035]"
+              >
+                <div className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-[#EAE4D8]">{cat.key}</div>
+                <div className="mt-2 line-clamp-2 text-[10.5px] leading-snug text-[rgba(234,228,216,0.78)]">{cat.copy}</div>
+                <div className="mt-3 flex flex-wrap gap-1 font-mono text-[9px] uppercase tracking-[0.12em]">
+                  <span className="chip-status pending">{cat.jobCount} jobs</span>
+                  <span className="chip-status">{cat.agentCount} agents</span>
+                </div>
+                <div className="mt-2 font-mono text-[9.5px] uppercase tracking-[0.14em] text-[#C5A67C]">Use template →</div>
+              </button>
+            ))}
+          </div>
+        </section>
 
         {/* Connected wallet badge */}
         {isConnected && address && (
@@ -386,7 +540,7 @@ function JobsPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.08fr_0.92fr]">
-          <section className="aureo-panel p-4 md:p-6">
+          <section id="job-board" className="aureo-panel scroll-mt-4 p-4 md:p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="aureo-mono-label mb-2">LIVE ESCROW JOBS</div>
@@ -436,7 +590,24 @@ function JobsPage() {
                 </button>
               </div>
 
+              <div>
+                <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.16em] text-[rgba(234,228,216,0.65)]">Marketplace filter</div>
+                <div className="flex flex-wrap gap-2">
+                  {(['All', ...CATEGORY_KEYS] as const).map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setJobCategoryFilter(category)}
+                      className={`chip-status ${jobCategoryFilter === category ? 'border-[#C5A67C] text-[#EAE4D8]' : ''}`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex flex-wrap gap-2">
+                <span className="w-full font-mono text-[9px] uppercase tracking-[0.16em] text-[rgba(234,228,216,0.65)]">Escrow state</span>
                 {(['all', '0', '1', '2', '3', '4', '5', '6'] as const).map((status) => (
                   <button
                     key={status}
@@ -448,11 +619,12 @@ function JobsPage() {
                     {status === 'all' ? 'All' : JOB_STATUS[Number(status)]}
                   </button>
                 ))}
-                {(jobSearch || jobStatusFilter !== 'all' || myJobsOnly) && (
+                {(jobSearch || jobCategoryFilter !== 'All' || jobStatusFilter !== 'all' || myJobsOnly) && (
                   <button
                     type="button"
                     onClick={() => {
                       setJobSearch('');
+                      setJobCategoryFilter('All');
                       setJobStatusFilter('all');
                       setMyJobsOnly(false);
                     }}
@@ -484,18 +656,27 @@ function JobsPage() {
                   const agent = agentById.get(job.agentId) ?? null;
                   const agentLabel = agent ? displayAgentLabel({ agentId: agent.agentId, metadataURI: agent.metadataURI }) : shortAgentId(job.agentId);
                   const skill = agent ? formatSkillLabel(parseAgentSkill(agent.metadataURI)) : null;
+                  const display = jobDisplays.get(job.id) ?? getManualJobDisplay(job, agent);
                   return (
                     <div key={job.id} className="aureo-list-card px-4 py-3 md:px-5 md:py-4">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <Link href={`/job/${job.id}`} className="font-mono text-[12.5px] text-[#EAE4D8] hover:text-[#C5A67C]">Job #{job.id}</Link>
-                          <div className="mt-1 font-mono text-[10.5px] text-[rgba(234,228,216,0.78)]">
-                            {agentLabel}{skill ? ` · ${skill}` : ''} · {shortAgentId(job.agentId)}
+                          <div className="mb-1 flex flex-wrap gap-2">
+                            <span className="chip-status pending">{display.category}</span>
+                            {!display.isStructured && <span className="chip-status">Legacy</span>}
                           </div>
+                          <Link href={`/job/${job.id}`} className="font-mono text-[12.5px] text-[#EAE4D8] hover:text-[#C5A67C]">{display.title}</Link>
+                          <div className="mt-1 font-mono text-[10.5px] text-[rgba(234,228,216,0.78)]">
+                            Job #{job.id} · {agentLabel}{skill ? ` · ${skill}` : ''}
+                          </div>
+                          <div className="mt-1 line-clamp-2 font-mono text-[10.5px] text-[rgba(234,228,216,0.78)]">{display.description}</div>
+                          <div className="mt-1 font-mono text-[9.5px] text-[rgba(234,228,216,0.65)]">{display.duration} · {display.difficulty}</div>
                           <div className="mt-2 flex flex-wrap gap-2 font-mono text-[10px]">
                             <Link href={`/a2a/agents/${job.agentId}`} className="text-[#C5A67C] hover:text-[#EAE4D8]">View agent profile</Link>
                             <span className="text-[#555]">·</span>
-                            <Link href={`/a2a?focus=${job.agentId}`} className="text-[#777] hover:text-[#C5A67C]">View autonomous activity</Link>
+                            <Link href={`/job/${job.id}`} className="text-[#C5A67C] hover:text-[#EAE4D8]">Open job</Link>
+                            <span className="text-[#555]">·</span>
+                            <button type="button" onClick={() => { setCreateForm((c) => ({ ...c, agentId: job.agentId, category: display.category, title: display.isStructured ? display.title : '', jobSpec: display.isStructured ? display.description : '' })); document.getElementById('create-job')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-[#777] hover:text-[#C5A67C]">Use agent</button>
                           </div>
                         </div>
                         <span className={`chip-status ${JOB_TONE[job.status] ?? 'pending'}`}>{JOB_STATUS[job.status]}</span>
@@ -550,7 +731,7 @@ function JobsPage() {
           </section>
 
           <section className="space-y-6">
-            <div className="aureo-panel p-4 md:p-6">
+            <section id="create-job" className="aureo-panel scroll-mt-4 p-4 md:p-6">
               <div className="flex items-center gap-2">
                 <div className="aureo-mono-label">STEP 1</div>
                 {createdJobId && (
@@ -564,7 +745,45 @@ function JobsPage() {
                 Assign work to a registered agent.
               </p>
 
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {JOB_TEMPLATES.map((template) => (
+                  <button
+                    key={template.name}
+                    type="button"
+                    onClick={() => setCreateForm((c) => ({ ...c, ...template }))}
+                    className="btn-bordered px-3 py-2 text-[9.5px]"
+                  >
+                    {template.name}
+                  </button>
+                ))}
+              </div>
+
               <div className="mt-5 space-y-4">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.82)]">JOB CATEGORY</label>
+                    <select value={createForm.category} onChange={(e) => setCreateForm((c) => ({ ...c, category: e.target.value }))} className="input-mono">
+                      {CATEGORY_KEYS.map((category) => <option key={category} value={category}>{category}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.82)]">JOB TITLE</label>
+                    <input value={createForm.title} onChange={(e) => setCreateForm((c) => ({ ...c, title: e.target.value }))} placeholder="Short task title" className="input-mono" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.82)]">DELIVERY TIME</label>
+                    <select value={createForm.duration} onChange={(e) => setCreateForm((c) => ({ ...c, duration: e.target.value }))} className="input-mono">
+                      {DELIVERY_TIMES.map((time) => <option key={time} value={time}>{time}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.82)]">DIFFICULTY</label>
+                    <select value={createForm.difficulty} onChange={(e) => setCreateForm((c) => ({ ...c, difficulty: e.target.value }))} className="input-mono">
+                      {DIFFICULTIES.map((level) => <option key={level} value={level}>{level}</option>)}
+                    </select>
+                  </div>
+                </div>
+
                 <div>
                   <label className="mb-1.5 block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.82)]">SELECT REGISTERED AGENT</label>
                   <select
@@ -699,9 +918,9 @@ function JobsPage() {
                   </div>
                 </div>
               )}
-            </div>
+            </section>
 
-            <div className="aureo-panel p-4 md:p-6">
+            <section id="fund-job" className="aureo-panel scroll-mt-4 p-4 md:p-6">
               <div className="aureo-mono-label mb-2">STEP 2</div>
               <h2 className="aureo-display text-[28px] text-[#EAE4D8]">Approve &amp; fund Settlement Vault</h2>
               <p className="mt-1 font-mono text-[11px] leading-5 text-[rgba(234,228,216,0.78)]">
@@ -773,13 +992,16 @@ function JobsPage() {
                   <code className="text-[rgba(234,228,216,0.85)]">setBudget &rarr; approve(USDC) &rarr; fund(jobId, amount)</code>
                 </div>
               </details>
-            </div>
+            </section>
 
-            <VaultDepositPanel />
-
-            <MilestoneProgressPanel />
-
-            <DisputeViewer />
+            <details id="advanced-escrow" className="aureo-panel scroll-mt-4 p-4 md:p-6">
+              <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-[0.18em] text-[#C5A67C]">Advanced Escrow Tools</summary>
+              <div className="mt-4 space-y-4">
+                <VaultDepositPanel />
+                <MilestoneProgressPanel />
+                <DisputeViewer />
+              </div>
+            </details>
 
             <div className="rounded-none border border-[rgba(255,255,255,0.08)] bg-[rgba(10,10,10,0.6)] p-5 font-mono text-[11px] leading-5 text-[rgba(234,228,216,0.82)]">
               {isConnected
