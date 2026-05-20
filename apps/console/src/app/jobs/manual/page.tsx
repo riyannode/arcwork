@@ -21,90 +21,25 @@ import { displayAgentLabel, formatSkillLabel, parseAgentSkill, shortAgentId } fr
 import { VaultDepositPanel } from '@/components/vault/VaultDepositPanel';
 import { MilestoneProgressPanel } from '@/components/vault/MilestoneProgressPanel';
 import { DisputeViewer } from '@/components/vault/DisputeViewer';
+import {
+  MANUAL_CATEGORIES,
+  CATEGORY_KEYS,
+  DELIVERY_TIMES,
+  DIFFICULTIES,
+  JOB_TEMPLATES,
+  inferManualJobCategory,
+  getManualJobDisplay,
+  categoryFromSlug,
+  slugFromCategory,
+  type ManualCategory,
+  type ManualJobDisplay,
+} from '@/lib/manualJobs';
 
 const JOB_STATUS = ['Created', 'Budgeted', 'Funded', 'Submitted', 'Evaluated', 'Settled', 'Cancelled'] as const;
 const JOB_TONE: Record<number, string> = { 0: '', 1: 'pending', 2: 'pending', 3: 'pending', 4: 'pending', 5: 'success', 6: 'error' };
-const MANUAL_CATEGORIES = [
-  { key: 'Smart Contract', copy: 'Audit, escrow, Solidity, protocol tasks.' },
-  { key: 'Frontend', copy: 'UI, wallet, dashboard, x402 integration.' },
-  { key: 'Backend', copy: 'API, routes, database, server logic.' },
-  { key: 'AI Agent', copy: 'LLM runtime, agent setup, A2A workflow.' },
-  { key: 'Security Audit', copy: 'Threat review, exploits, risk reports.' },
-  { key: 'Data / Research', copy: 'Market, signal, dataset, research tasks.' },
-  { key: 'Design / UI', copy: 'UX, visuals, screens, product polish.' },
-  { key: 'DevOps', copy: 'Deploy, infra, Vercel, monitoring.' },
-  { key: 'Documentation', copy: 'Guides, README, integration docs.' },
-  { key: 'Other', copy: 'Custom escrow work.' },
-] as const;
-const CATEGORY_KEYS = MANUAL_CATEGORIES.map((c) => c.key);
-type ManualCategory = (typeof CATEGORY_KEYS)[number];
-const DELIVERY_TIMES = ['< 1 hour', '1–6 hours', '24 hours', '2–7 days', 'Custom'] as const;
-const DIFFICULTIES = ['Simple', 'Medium', 'Advanced'] as const;
-const JOB_TEMPLATES = [
-  { name: 'Smart contract audit', category: 'Smart Contract', title: 'Audit escrow flow', jobSpec: 'Review approve/fund/settle logic and report issues.', duration: '24 hours', difficulty: 'Advanced' },
-  { name: 'Frontend wallet integration', category: 'Frontend', title: 'Fix wallet UI flow', jobSpec: 'Improve wallet connection, loading states, and action clarity.', duration: '1–6 hours', difficulty: 'Medium' },
-  { name: 'Backend API task', category: 'Backend', title: 'Secure API route', jobSpec: 'Add auth checks and improve error handling.', duration: '24 hours', difficulty: 'Medium' },
-  { name: 'AI agent setup', category: 'AI Agent', title: 'Connect external agent runtime', jobSpec: 'Configure an agent endpoint and test job execution.', duration: '2–7 days', difficulty: 'Advanced' },
-  { name: 'Documentation task', category: 'Documentation', title: 'Write integration guide', jobSpec: 'Explain setup, usage, and expected flow.', duration: '1–6 hours', difficulty: 'Simple' },
-] as const;
-type ManualJobDisplay = { category: ManualCategory; title: string; description: string; duration: string; difficulty: string; isStructured: boolean };
 
 function isValidAddress(value: string) {
   return /^0x[a-fA-F0-9]{40}$/.test(value.trim());
-}
-
-function normalizeCategory(value: unknown): ManualCategory {
-  const text = String(value ?? '').trim().toLowerCase();
-  return CATEGORY_KEYS.find((c) => c.toLowerCase() === text) ?? 'Other';
-}
-
-function inferManualJobCategory(job: IndexedJob, agent?: IndexedAgent | null): ManualCategory {
-  const haystack = [
-    (job as IndexedJob & { taskDescription?: string; jobSpec?: string }).taskDescription,
-    (job as IndexedJob & { jobSpec?: string }).jobSpec,
-    job.jobSpecHash,
-    agent?.metadataURI,
-    agent ? parseAgentSkill(agent.metadataURI) : '',
-    agent ? displayAgentLabel({ agentId: agent.agentId, metadataURI: agent.metadataURI }) : '',
-  ].join(' ').toLowerCase();
-  if (/security|exploit|threat|pentest|vulnerab/.test(haystack)) return 'Security Audit';
-  if (/solidity|escrow|contract|audit|protocol/.test(haystack)) return 'Smart Contract';
-  if (/frontend|ui|react|next|wallet|dashboard/.test(haystack)) return 'Frontend';
-  if (/backend|api|route|database|supabase|server/.test(haystack)) return 'Backend';
-  if (/agent|llm|a2a|autonomous|runtime/.test(haystack)) return 'AI Agent';
-  if (/data|research|market|signal/.test(haystack)) return 'Data / Research';
-  if (/design|ux|visual/.test(haystack)) return 'Design / UI';
-  if (/devops|deploy|vercel|infra|monitor/.test(haystack)) return 'DevOps';
-  if (/docs|guide|readme|documentation/.test(haystack)) return 'Documentation';
-  return 'Other';
-}
-
-function getManualJobDisplay(job: IndexedJob, agent?: IndexedAgent | null): ManualJobDisplay {
-  const raw = (job as IndexedJob & { taskDescription?: string; jobSpec?: string }).taskDescription ?? (job as IndexedJob & { jobSpec?: string }).jobSpec ?? '';
-  if (raw && raw.trim().startsWith('{')) {
-    try {
-      const parsed = JSON.parse(raw) as Partial<Record<'category' | 'title' | 'description' | 'duration' | 'difficulty', string>>;
-      return {
-        category: normalizeCategory(parsed.category),
-        title: parsed.title?.trim() || `Manual Job #${job.id}`,
-        description: parsed.description?.trim() || `Escrow job assigned to ${agent ? displayAgentLabel({ agentId: agent.agentId, metadataURI: agent.metadataURI }) : shortAgentId(job.agentId)}`,
-        duration: parsed.duration?.trim() || 'Unspecified',
-        difficulty: parsed.difficulty?.trim() || 'Unspecified',
-        isStructured: true,
-      };
-    } catch {
-      // Legacy indexer rows may only expose jobSpecHash. Keep rendering safe.
-    }
-  }
-  const agentLabel = agent ? displayAgentLabel({ agentId: agent.agentId, metadataURI: agent.metadataURI }) : shortAgentId(job.agentId);
-  return {
-    category: inferManualJobCategory(job, agent),
-    title: `Manual Job #${job.id}`,
-    description: `Escrow job assigned to ${agentLabel}`,
-    duration: 'Unspecified',
-    difficulty: 'Unspecified',
-    isStructured: false,
-  };
 }
 
 export default function JobsPageRoute() {
@@ -118,6 +53,12 @@ export default function JobsPageRoute() {
 function JobsPage() {
   const searchParams = useSearchParams();
   const preselectedAgentId = (searchParams.get('agent') || searchParams.get('agentId'))?.trim() ?? '';
+  const categoryParam = searchParams.get('category')?.trim() ?? '';
+  const initialCategory =
+    CATEGORY_KEYS.find((key) => key.toLowerCase() === categoryParam.toLowerCase()) ??
+    categoryFromSlug(categoryParam) ??
+    'Smart Contract';
+  const templateParam = searchParams.get('template')?.trim() ?? '';
   const { address, isConnected } = useArcWallet();
   const { writeContractAsync } = useArcWrite();
   const { notify } = useProtectionNotice();
@@ -131,7 +72,7 @@ function JobsPage() {
   const [txState, setTxState] = useState<string | null>(null);
   const [statusTone, setStatusTone] = useState<'idle' | 'pending' | 'synced' | 'error'>('idle');
   const [createForm, setCreateForm] = useState({
-    category: 'Smart Contract',
+    category: initialCategory,
     title: '',
     agentId: '',
     worker: '',
@@ -242,6 +183,15 @@ function JobsPage() {
       );
     }
   }, [address, evaluatorTouched]);
+
+  useEffect(() => {
+    const template = JOB_TEMPLATES.find((item) => item.name.toLowerCase() === templateParam.toLowerCase());
+    setCreateForm((current) => ({
+      ...current,
+      ...(template ? template : { category: initialCategory }),
+    }));
+    setJobCategoryFilter(initialCategory);
+  }, [initialCategory, templateParam]);
 
   async function loadJobs() {
     setIsRefreshing(true);
@@ -489,10 +439,9 @@ function JobsPage() {
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
             {categoryStats.map((cat) => (
-              <button
+              <Link
                 key={cat.key}
-                type="button"
-                onClick={() => { setJobCategoryFilter(cat.key); document.getElementById('create-job')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                href={`/jobs/manual/${slugFromCategory(cat.key)}`}
                 className="group min-h-[126px] rounded-sm border border-white/[0.07] bg-black/25 p-3 text-left transition hover:border-[#C5A67C]/35 hover:bg-white/[0.035]"
               >
                 <div className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-[#EAE4D8]">{cat.key}</div>
@@ -501,8 +450,8 @@ function JobsPage() {
                   <span className="chip-status pending">{cat.jobCount} jobs</span>
                   <span className="chip-status">{cat.agentCount} agents</span>
                 </div>
-                <div className="mt-2 font-mono text-[9.5px] uppercase tracking-[0.14em] text-[#C5A67C]">Use template →</div>
-              </button>
+                <div className="mt-2 font-mono text-[9.5px] uppercase tracking-[0.14em] text-[#C5A67C]">Open category →</div>
+              </Link>
             ))}
           </div>
         </section>
@@ -762,7 +711,7 @@ function JobsPage() {
                 <div className="grid gap-3 md:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block font-mono text-[10.5px] tracking-[0.14em] text-[rgba(234,228,216,0.82)]">JOB CATEGORY</label>
-                    <select value={createForm.category} onChange={(e) => setCreateForm((c) => ({ ...c, category: e.target.value }))} className="input-mono">
+                    <select value={createForm.category} onChange={(e) => setCreateForm((c) => ({ ...c, category: e.target.value as ManualCategory }))} className="input-mono">
                       {CATEGORY_KEYS.map((category) => <option key={category} value={category}>{category}</option>)}
                     </select>
                   </div>
