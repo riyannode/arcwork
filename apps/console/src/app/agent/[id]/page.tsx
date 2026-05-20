@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { readContract, waitForTransactionReceipt } from '@wagmi/core';
-import { getAddress, type Hex } from 'viem';
+import { decodeEventLog, getAddress, type Hex } from 'viem';
 import { useArcWallet } from '@/hooks/useArcWallet';
 import { useArcWrite } from '@/hooks/useArcWrite';
 import { useRail, railQueryParams } from '@/components/rail/RailProvider';
@@ -212,18 +212,34 @@ export default function AgentProfilePage() {
       // payment — x402 verifies the resource access, JobEscrow records the
       // job for proof-of-work tracking.
       const amount = parseUSDC(runBudget);
-      const nextJobId = (await readContract(config, {
-        address: CONTRACTS.JOB_ESCROW,
-        abi: JOB_ESCROW_ABI,
-        functionName: 'jobCounter',
-      }) as bigint) + BigInt(1);
-      setRunState('2/5 Creating JobEscrow run for agent worker...');
+      // ERC-8183 official: there is no `jobCounter` view. Derive jobId from
+      // the `JobCreated` event emitted by createJob() in the next tx receipt.
+      setRunState('2/5 Creating job on AgenticCommerce escrow...');
       const serviceWorker = (process.env.NEXT_PUBLIC_WORKER_ADDR as `0x${string}` | undefined) ?? (agent.controller as `0x${string}`);
-      const createHash = await writeContractAsync(buildCreateJobConfig(BigInt(agentId), serviceWorker, address, runInput));
-      await waitForTransactionReceipt(config, { hash: createHash });
+      // Default expiry: 7 days from now (ERC-8183 expects a unix-second deadline).
+      const expiredAt = BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60);
+      const createHash = await writeContractAsync(
+        buildCreateJobConfig(serviceWorker, address as `0x${string}`, expiredAt, runInput),
+      );
+      const createReceipt = await waitForTransactionReceipt(config, { hash: createHash });
+
+      // Parse JobCreated event to get the actual on-chain jobId.
+      let visibleJobId = BigInt(0);
+      for (const log of createReceipt.logs) {
+        if (log.address.toLowerCase() !== CONTRACTS.JOB_ESCROW.toLowerCase()) continue;
+        try {
+          const decoded = decodeEventLog({ abi: JOB_ESCROW_ABI, data: log.data, topics: log.topics });
+          if (decoded.eventName === 'JobCreated' && decoded.args && 'jobId' in decoded.args) {
+            visibleJobId = decoded.args.jobId as bigint;
+            break;
+          }
+        } catch { /* skip non-matching logs */ }
+      }
+      if (visibleJobId === BigInt(0)) {
+        throw new Error('JobCreated event not found in tx receipt');
+      }
 
       setRunState('3/5 Setting budget, approving USDC, funding job...');
-      const visibleJobId = nextJobId;
       const budgetHash = await writeContractAsync(buildSetBudgetConfig(visibleJobId, amount));
       await waitForTransactionReceipt(config, { hash: budgetHash });
       const approveHash = await writeContractAsync(buildApproveUsdcConfig(amount));

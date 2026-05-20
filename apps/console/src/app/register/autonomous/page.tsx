@@ -365,12 +365,20 @@ export default function RegisterAutonomousPage() {
     const handle = setTimeout(async () => {
       try {
         const id = nameToAgentId(norm);
-        const exists = (await readContract(config, {
-          abi: AGENT_REGISTRY_ABI,
-          address: CONTRACTS.AGENT_REGISTRY,
-          functionName: 'exists',
-          args: [id],
-        })) as boolean;
+        // ERC-8004 official: check ownership via ownerOf — if it reverts, the
+        // tokenId (= agentId) is unminted and therefore "free".
+        let exists = false;
+        try {
+          const owner = (await readContract(config, {
+            abi: AGENT_REGISTRY_ABI,
+            address: CONTRACTS.AGENT_REGISTRY,
+            functionName: 'ownerOf',
+            args: [id],
+          })) as string;
+          exists = !!owner && owner !== '0x0000000000000000000000000000000000000000';
+        } catch {
+          exists = false;
+        }
         setNameStatus({ state: exists ? 'taken' : 'free', agentId: id });
       } catch (e) {
         setNameStatus({ state: 'invalid', reason: e instanceof Error ? e.message : 'Lookup failed.' });

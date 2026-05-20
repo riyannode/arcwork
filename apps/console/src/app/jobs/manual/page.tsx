@@ -306,12 +306,14 @@ function JobsPage() {
         createdAt: new Date().toISOString(),
       };
       setTxState('Submitting createJob transaction\u2026');
+      // ERC-8183 official: createJob(provider, evaluator, expiredAt, description, hook)
+      const expiredAt = BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60);
       const hash = await writeContractAsync(
         buildCreateJobConfig(
-          BigInt(createForm.agentId),
           createForm.worker.trim() as `0x${string}`,
           createForm.evaluator.trim() as `0x${string}`,
-          JSON.stringify(structuredSpec)
+          expiredAt,
+          JSON.stringify(structuredSpec),
         )
       );
       setTxState(`Waiting for ${hash.slice(0, 10)}\u2026`);

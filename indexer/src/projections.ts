@@ -1,13 +1,4 @@
-import {
-  readAgentProfile,
-  readAllJobs,
-  readJob,
-  readJobCounter,
-  readWorkProof,
-  readWorkProofTokenByJobId,
-} from "@arclayer/sdk";
-import type { IndexedJobEvent } from "@arclayer/sdk";
-import { INDEXER_RPC, mapWithLimit, withTimeout } from "./rpc-limit";
+import type { IndexedAgentEvent, IndexedJobEvent } from "@arclayer/sdk";
 
 export function buildJobProjection(events: IndexedJobEvent[]) {
   return events.reduce<Record<string, IndexedJobEvent[]>>((acc, event) => {
@@ -20,166 +11,122 @@ export function buildJobProjection(events: IndexedJobEvent[]) {
 
 export function buildAgentEventProjection(events: IndexedJobEvent[]) {
   return events.reduce<Record<string, IndexedJobEvent[]>>((acc, event) => {
-    const key = String(event.agentId ?? "unknown");
+    const key = String((event as any).provider ?? (event as any).agentId ?? "unknown").toLowerCase();
     acc[key] ??= [];
     acc[key].push(event);
     return acc;
   }, {});
 }
 
-export async function buildJobsProjection() {
-  const jobCounter = await withTimeout(readJobCounter(), "readJobCounter");
-  const jobIds = Array.from({ length: Number(jobCounter) }, (_, index) => BigInt(index + 1));
+export function projectJobsFromEvents(events: IndexedJobEvent[]) {
+  const byJob = buildJobProjection(events);
 
-  const jobs = await mapWithLimit(jobIds, INDEXER_RPC.CONCURRENCY, (jobId) =>
-    withTimeout(readJob(jobId), `readJob(${jobId})`),
-  );
+  return Object.entries(byJob).map(([id, jobEvents]) => {
+    const created = jobEvents.find((event) => event.eventName === "JobCreated") as any;
+    const latestBudget = [...jobEvents].reverse().find((event) => event.eventName === "BudgetSet") as any;
+    const fundedEvents = jobEvents.filter((event) => event.eventName === "JobFunded") as any[];
+    const submitted = [...jobEvents].reverse().find((event) => event.eventName === "JobSubmitted") as any;
+    const completed = [...jobEvents].reverse().find((event) => event.eventName === "JobCompleted") as any;
 
-  return jobs
-    .filter((job): job is NonNullable<typeof job> => job !== null)
-    .map((job) => ({
-      id: job.id.toString(),
-      agentId: job.agentId.toString(),
-      client: job.client,
-      worker: job.worker,
-      evaluator: job.evaluator,
-      budget: job.budget.toString(),
-      fundedAmount: job.fundedAmount.toString(),
-      createdAt: job.createdAt.toString(),
-      jobSpecHash: job.jobSpecHash,
-      deliverableURI: job.deliverableURI,
-      proofMetadataURI: job.proofMetadataURI,
-      approved: job.approved,
-      status: job.status,
-    }));
+    const totalFunded = fundedEvents.reduce((sum, event) => sum + BigInt(event.amount ?? 0), BigInt(0));
+    const budget = BigInt(latestBudget?.budget ?? created?.maxBudget ?? 0);
+    const status = completed ? 4 : submitted ? 3 : totalFunded > BigInt(0) ? 2 : created ? 1 : 0;
+
+    return {
+      id,
+      provider: created?.provider ?? "0x0000000000000000000000000000000000000000",
+      client: created?.client ?? "0x0000000000000000000000000000000000000000",
+      paymentToken: created?.paymentToken ?? "0x0000000000000000000000000000000000000000",
+      maxBudget: String(created?.maxBudget ?? budget),
+      budget: budget.toString(),
+      fundedAmount: totalFunded.toString(),
+      metadataURI: created?.metadataURI ?? "",
+      submissionURI: submitted?.submissionURI ?? "",
+      completionURI: completed?.completionURI ?? "",
+      createdAtBlock: String(created?.blockNumber ?? jobEvents[0]?.blockNumber ?? 0),
+      updatedAtBlock: String(jobEvents[jobEvents.length - 1]?.blockNumber ?? 0),
+      status,
+      events: jobEvents,
+    };
+  });
 }
 
-export async function buildJobDetailProjection(jobId: bigint) {
-  const job = await withTimeout(readJob(jobId), `readJob(${jobId})`).then((record) => ({
-    id: record.id.toString(),
-    agentId: record.agentId.toString(),
-    client: record.client,
-    worker: record.worker,
-    evaluator: record.evaluator,
-    budget: record.budget.toString(),
-    fundedAmount: record.fundedAmount.toString(),
-    createdAt: record.createdAt.toString(),
-    jobSpecHash: record.jobSpecHash,
-    deliverableURI: record.deliverableURI,
-    proofMetadataURI: record.proofMetadataURI,
-    approved: record.approved,
-    status: record.status,
-  })).catch(() => null);
+export function projectAgentsFromEvents(events: IndexedAgentEvent[]) {
+  const byId = events.reduce<Record<string, IndexedAgentEvent>>((acc, event) => {
+    acc[String(event.agentId)] = event;
+    return acc;
+  }, {});
 
+  return Object.values(byId).map((event) => ({
+    agentId: String(event.agentId),
+    tokenId: String(event.agentId),
+    controller: event.controller,
+    metadataURI: event.metadataURI ?? "",
+    registeredAtBlock: String(event.blockNumber),
+    transactionHash: event.transactionHash,
+  }));
+}
+
+export async function buildJobsProjection(events: IndexedJobEvent[] = []) {
+  return projectJobsFromEvents(events);
+}
+
+export async function buildJobDetailProjection(jobId: bigint, events: IndexedJobEvent[] = []) {
+  const job = projectJobsFromEvents(events).find((entry) => entry.id === jobId.toString());
   if (!job) return null;
-
-  const tokenId = await withTimeout(readWorkProofTokenByJobId(jobId), `readWorkProofTokenByJobId(${jobId})`).catch(() => BigInt(0));
-  const proof =
-    tokenId > BigInt(0)
-      ? await withTimeout(readWorkProof(tokenId), `readWorkProof(${tokenId})`).then((record) => ({
-          tokenId: tokenId.toString(),
-          jobId: record.jobId.toString(),
-          agentId: record.agentId.toString(),
-          payer: record.payer,
-          amountPaid: record.amountPaid.toString(),
-          mintedAt: record.mintedAt.toString(),
-          metadataURI: record.metadataURI,
-        })).catch(() => null)
-      : null;
-
-  return {
-    job,
-    proof,
-  };
+  return { job, proof: null };
 }
 
-export async function buildAgentsProjection(registeredAgentIds: bigint[] = []) {
-  // If caller passes IDs, refresh ONLY those agents. Full scan is retained only
-  // for manual/legacy callers that pass no IDs.
-  const fromRegistry = registeredAgentIds.map((id) => id.toString());
-  const fromJobs = registeredAgentIds.length > 0
-    ? []
-    : (await readAllJobs().catch(() => [])).map((job) => job.agentId.toString());
-  const uniqueAgentIds = Array.from(new Set([...fromRegistry, ...fromJobs])).map((id) => BigInt(id));
+export async function buildAgentsProjection(agentEvents: IndexedAgentEvent[] = []) {
+  return projectAgentsFromEvents(agentEvents);
+}
 
-  const profiles = await mapWithLimit(uniqueAgentIds, INDEXER_RPC.CONCURRENCY, (agentId) =>
-    withTimeout(readAgentProfile(agentId), `readAgentProfile(${agentId})`),
+export async function buildAgentDetailProjection(
+  agentId: bigint,
+  agentEvents: IndexedAgentEvent[] = [],
+  jobEvents: IndexedJobEvent[] = [],
+) {
+  const agent = projectAgentsFromEvents(agentEvents).find((entry) => entry.agentId === agentId.toString());
+  if (!agent) return null;
+
+  const jobs = projectJobsFromEvents(jobEvents).filter(
+    (job) => job.provider?.toLowerCase() === agent.controller.toLowerCase() || job.client?.toLowerCase() === agent.controller.toLowerCase(),
   );
 
-  return profiles
-    .filter((p): p is NonNullable<typeof p> => p !== null)
-    .map((profile) => ({
-      agentId: profile.agent.agentId.toString(),
-      controller: profile.agent.controller,
-      skillHash: profile.agent.skillHash,
-      metadataURI: profile.agent.metadataURI,
-      registeredAt: profile.agent.registeredAt.toString(),
-      reputationScore: profile.agent.reputationScore.toString(),
-      score: profile.score.toString(),
-      jobs: profile.jobs.map((job) => job.id.toString()),
-      proofTokenIds: profile.proofTokenIds.map((tokenId) => tokenId.toString()),
-    }));
-}
-
-export async function buildAgentDetailProjection(agentId: bigint, registeredAgentIds: bigint[] = []) {
-  const profiles = await buildAgentsProjection(registeredAgentIds);
-  const profile = profiles.find((entry) => entry.agentId === agentId.toString());
-
-  if (!profile) {
-    return null;
-  }
-
-  const jobs = await buildJobsProjection();
-  const proofs = await buildProofsProjection();
-
   return {
-    agent: profile,
-    jobs: jobs.filter((job) => job.agentId === agentId.toString()),
-    proofs: proofs.filter((proof) => proof.agentId === agentId.toString()),
+    agent,
+    jobs,
+    proofs: [],
   };
 }
 
 export async function buildProofsProjection() {
-  const jobs = await buildJobsProjection();
-  const proofs = await mapWithLimit(jobs, INDEXER_RPC.CONCURRENCY, async (job) => {
-    const tokenId = await withTimeout(readWorkProofTokenByJobId(BigInt(job.id)), `readWorkProofTokenByJobId(${job.id})`);
-    if (tokenId === BigInt(0)) return null;
-    const proof = await withTimeout(readWorkProof(tokenId), `readWorkProof(${tokenId})`);
-    return {
-      tokenId: tokenId.toString(),
-      jobId: proof.jobId.toString(),
-      agentId: proof.agentId.toString(),
-      payer: proof.payer,
-      amountPaid: proof.amountPaid.toString(),
-      mintedAt: proof.mintedAt.toString(),
-      metadataURI: proof.metadataURI,
-    };
-  });
-
-  return proofs.filter((proof): proof is NonNullable<typeof proof> => proof !== null);
+  // ERC-8183 reference flow does not mint ArcLayer custom WorkProof NFTs.
+  return [];
 }
 
-export async function buildOverviewProjection(events: IndexedJobEvent[]) {
-  const [jobs, agents, proofs] = await Promise.all([
-    buildJobsProjection(),
-    buildAgentsProjection(),
-    buildProofsProjection(),
-  ]);
+export async function buildOverviewProjection(
+  jobEvents: IndexedJobEvent[],
+  agentEvents: IndexedAgentEvent[] = [],
+) {
+  const jobs = projectJobsFromEvents(jobEvents);
+  const agents = projectAgentsFromEvents(agentEvents);
+  const proofs: unknown[] = [];
 
   const totalBudget = jobs.reduce((sum, job) => sum + BigInt(job.budget), BigInt(0));
   const totalFunded = jobs.reduce((sum, job) => sum + BigInt(job.fundedAmount), BigInt(0));
-  const settledJobs = jobs.filter((job) => job.status === 5).length;
+  const completedJobs = jobs.filter((job) => job.status === 4).length;
   const fundedJobs = jobs.filter((job) => BigInt(job.fundedAmount) > BigInt(0)).length;
 
   return {
     summary: {
-      eventCount: events.length,
+      eventCount: jobEvents.length + agentEvents.length,
       jobs: jobs.length,
       agents: agents.length,
       proofs: proofs.length,
       totalBudget: totalBudget.toString(),
       totalFunded: totalFunded.toString(),
-      settledJobs,
+      settledJobs: completedJobs,
       fundedJobs,
     },
     jobs,
