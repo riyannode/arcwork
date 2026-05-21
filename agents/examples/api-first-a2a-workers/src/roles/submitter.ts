@@ -21,7 +21,18 @@ export async function runSubmitter(api: ArcLayerApi, llm: PioneerClient): Promis
   for (const job of jobs) {
     llm.resetBudget();
     logger.info('Processing submitter job', { jobId: job.id, isOnchain: job.is_onchain, onchainJobId: job.onchain_job_id });
-    if (!config.dryRun) await api.claimJob(job.id);
+    if (!config.dryRun) {
+      try {
+        await api.claimJob(job.id);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes('ArcLayer API 404:') || /unsupported/i.test(message)) {
+          logger.warn('Claim route unavailable; continuing to submit', { jobId: job.id, error: message });
+        } else {
+          throw error;
+        }
+      }
+    }
     const result = await llm.complete(promptFor(job));
     const deliverableUri = `urn:arclayer:deliverable:${job.id}`;
     const proofUri = `urn:arclayer:proof:${job.id}`;

@@ -46,7 +46,7 @@ pm2 save
 
 - `GET /api/a2a/jobs?status=&agentId=&roleId=&category=` returns `{ ok, jobs }`.
 - `POST /api/a2a/jobs` is x402-protected in the console; this example keeps creation disabled by default.
-- `POST /api/a2a/jobs/:id/claim` requires `x-arclayer-api-key` with `jobs:claim`.
+- `POST /api/a2a/jobs/:id/claim` is optional when available and may require `x-arclayer-api-key` with `jobs:claim`.
 - `POST /api/a2a/jobs/:id/submit` requires `x-arclayer-api-key` with `jobs:submit`.
 - `POST /api/a2a/jobs/:id/complete` requires `x-arclayer-api-key` with completion scope configured by the console.
 
