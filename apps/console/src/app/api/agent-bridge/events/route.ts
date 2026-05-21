@@ -5,8 +5,8 @@ import { insertBridgeEvent, listBridgeEvents, type BridgeEventInput } from '@/li
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const ROLES = new Set(['oracle', 'momentum_resolver', 'scalping_resolver', 'evaluator', 'executor']);
-const TYPES = new Set(['market_snapshot', 'resolver_output', 'evaluation', 'execution_intent']);
+const ROLES = new Set(['external_runtime', 'registered_agent', 'verification', 'executor', 'oracle', 'momentum_resolver', 'scalping_resolver', 'evaluator']);
+const TYPES = new Set(['session_started', 'bridge_event', 'work_proof', 'receipt_reference', 'market_snapshot', 'resolver_output', 'evaluation', 'execution_intent']);
 
 function bad(error: string, status = 400, extra?: Record<string, unknown>) {
   return NextResponse.json({ ok: false, error, ...(extra ?? {}) }, { status });

@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { getSupabaseAdmin } from '@/lib/x402/supabaseClient';
 
-export type BridgeRole = 'oracle' | 'momentum_resolver' | 'scalping_resolver' | 'evaluator' | 'executor';
-export type BridgeEventType = 'market_snapshot' | 'resolver_output' | 'evaluation' | 'execution_intent';
+export type BridgeRole = 'external_runtime' | 'registered_agent' | 'verification' | 'executor' | 'oracle' | 'momentum_resolver' | 'scalping_resolver' | 'evaluator';
+export type BridgeEventType = 'session_started' | 'bridge_event' | 'work_proof' | 'receipt_reference' | 'market_snapshot' | 'resolver_output' | 'evaluation' | 'execution_intent';
 export type BridgeReceiptType = 'x402_arc_native' | 'x402_circle_gateway' | 'dry_run';
 
 export interface BridgeEventInput {
@@ -38,16 +38,16 @@ export async function insertBridgeEvent(input: BridgeEventInput) {
     session_id: input.sessionId,
     agent_id: input.agentId,
     role: input.role,
-    type: input.type,
+    event_type: input.type,
     payload: input.payload ?? {},
     payload_hash: input.payloadHash || stablePayloadHash(input.payload ?? {}),
-    source: input.source || 'pm2-bot',
+    source: input.source || 'external-runtime',
     dry_run: input.dryRun !== false,
   };
   const { data, error } = await getSupabaseAdmin()
     .from('agent_bridge_events')
     .insert(row)
-    .select('id, session_id, agent_id, role, type, payload, payload_hash, source, dry_run, created_at')
+    .select('id, session_id, agent_id, role, type, event_type, payload, payload_hash, source, dry_run, created_at')
     .single();
   if (error) throw new Error(error.message);
   return data;
@@ -56,7 +56,7 @@ export async function insertBridgeEvent(input: BridgeEventInput) {
 export async function listBridgeEvents(filters: { sessionId?: string | null; role?: string | null; limit?: number }) {
   let q = getSupabaseAdmin()
     .from('agent_bridge_events')
-    .select('id, session_id, agent_id, role, type, payload, payload_hash, source, dry_run, created_at')
+    .select('id, session_id, agent_id, role, type, event_type, payload, payload_hash, source, dry_run, created_at')
     .order('created_at', { ascending: false })
     .limit(Math.min(Math.max(filters.limit ?? 50, 1), 200));
   if (filters.sessionId) q = q.eq('session_id', filters.sessionId);
@@ -103,10 +103,9 @@ export async function latestBridgeSession() {
   const pick = (role: BridgeRole) => sessionEvents.filter((e) => e.role === role).at(-1) ?? null;
   return {
     sessionId: latestSessionId,
-    oracle: pick('oracle'),
-    momentum: pick('momentum_resolver'),
-    scalping: pick('scalping_resolver'),
-    evaluator: pick('evaluator'),
+    runtime: pick('external_runtime'),
+    agent: pick('registered_agent'),
+    verification: pick('verification'),
     executor: pick('executor'),
     events: sessionEvents,
     receipts,
