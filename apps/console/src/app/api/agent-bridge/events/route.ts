@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireApiKey } from '@/lib/a2a/auth';
+import { API_KEY_SCOPES, requireApiKey } from '@/lib/a2a/auth';
 import { insertBridgeEvent, listBridgeEvents, type BridgeEventInput } from '@/lib/agent-bridge/store';
 
 export const runtime = 'nodejs';
@@ -13,7 +13,7 @@ function bad(error: string, status = 400, extra?: Record<string, unknown>) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireApiKey(req, 'agent_bridge:write');
+  const auth = await requireApiKey(req, API_KEY_SCOPES.AGENT_BRIDGE_WRITE);
   if (auth.error) return auth.error;
 
   let body: Partial<BridgeEventInput>;
@@ -40,12 +40,14 @@ export async function POST(req: NextRequest) {
   try {
     const event = await insertBridgeEvent({
       sessionId,
+      runtimeId: typeof body.runtimeId === 'string' ? body.runtimeId.trim() : null,
       agentId,
       role: role as BridgeEventInput['role'],
       type: type as BridgeEventInput['type'],
       payload: body.payload as Record<string, unknown>,
       payloadHash: typeof body.payloadHash === 'string' ? body.payloadHash : undefined,
-      source: typeof body.source === 'string' ? body.source : 'pm2-bot',
+      metadata: body.metadata && typeof body.metadata === 'object' && !Array.isArray(body.metadata) ? body.metadata as Record<string, unknown> : {},
+      source: typeof body.source === 'string' ? body.source : 'external-runtime',
       dryRun: body.dryRun !== false,
     });
     return NextResponse.json({ ok: true, eventId: event.id });

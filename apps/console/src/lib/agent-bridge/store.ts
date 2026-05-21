@@ -7,11 +7,13 @@ export type BridgeReceiptType = 'x402_arc_native' | 'x402_circle_gateway' | 'dry
 
 export interface BridgeEventInput {
   sessionId: string;
+  runtimeId?: string | null;
   agentId: string;
   role: BridgeRole;
   type: BridgeEventType;
   payload: Record<string, unknown>;
   payloadHash?: string;
+  metadata?: Record<string, unknown> | null;
   source?: string;
   dryRun?: boolean;
 }
@@ -29,25 +31,27 @@ export function stablePayloadHash(payload: unknown): string {
   return `0x${createHash('sha256').update(JSON.stringify(payload ?? {})).digest('hex')}`;
 }
 
-export function makeSessionId(prefix = 'trade'): string {
+export function makeSessionId(prefix = 'bridge'): string {
   return `${prefix}_${Date.now()}_${randomUUID().slice(0, 8)}`;
 }
 
 export async function insertBridgeEvent(input: BridgeEventInput) {
   const row = {
     session_id: input.sessionId,
+    runtime_id: input.runtimeId ?? null,
     agent_id: input.agentId,
     role: input.role,
     event_type: input.type,
     payload: input.payload ?? {},
     payload_hash: input.payloadHash || stablePayloadHash(input.payload ?? {}),
+    metadata: input.metadata ?? {},
     source: input.source || 'external-runtime',
     dry_run: input.dryRun !== false,
   };
   const { data, error } = await getSupabaseAdmin()
     .from('agent_bridge_events')
     .insert(row)
-    .select('id, session_id, agent_id, role, type, event_type, payload, payload_hash, source, dry_run, created_at')
+    .select('id, session_id, runtime_id, agent_id, role, type, event_type, payload, payload_hash, metadata, source, dry_run, created_at')
     .single();
   if (error) throw new Error(error.message);
   return data;
@@ -56,7 +60,7 @@ export async function insertBridgeEvent(input: BridgeEventInput) {
 export async function listBridgeEvents(filters: { sessionId?: string | null; role?: string | null; limit?: number }) {
   let q = getSupabaseAdmin()
     .from('agent_bridge_events')
-    .select('id, session_id, agent_id, role, type, event_type, payload, payload_hash, source, dry_run, created_at')
+    .select('id, session_id, runtime_id, agent_id, role, type, event_type, payload, payload_hash, metadata, source, dry_run, created_at')
     .order('created_at', { ascending: false })
     .limit(Math.min(Math.max(filters.limit ?? 50, 1), 200));
   if (filters.sessionId) q = q.eq('session_id', filters.sessionId);

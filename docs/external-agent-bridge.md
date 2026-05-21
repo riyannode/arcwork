@@ -21,6 +21,13 @@ ArcLayer core is an external agent runtime protocol: registry, jobs, x402 paymen
 
 External runtimes run on owner infrastructure. They authenticate with ArcLayer API keys or signed requests, publish manifests, claim jobs, and submit results/proofs back to ArcLayer.
 
+Bridge API key scopes:
+
+- `agent_bridge:write` — required for `POST /api/agent-bridge/events`.
+- `agent_bridge:receipt` — required for receipt creation through `POST /api/agent-bridge/receipts`.
+
+Read-only session/receipt debug routes are server-mediated and do not expose raw secrets.
+
 ## Bridge event ingestion
 
 `POST /api/agent-bridge/events`
